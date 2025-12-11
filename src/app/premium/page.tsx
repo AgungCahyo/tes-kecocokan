@@ -51,86 +51,111 @@ export default function PremiumPage() {
     };
   }, []);
 
-  const handlePayment = async () => {
-    if (!email || !email.includes('@')) {
-      setErrorMessage('Mohon masukkan email yang valid');
-      return;
+const handlePayment = async () => {
+  if (!email || !email.includes('@')) {
+    setErrorMessage('Mohon masukkan email yang valid');
+    return;
+  }
+
+  setIsProcessing(true);
+  setErrorMessage('');
+
+  try {
+    // Store email in localStorage for redirect pages
+    localStorage.setItem('payment_email', email);
+
+    const paymentResponse = await midtransService.createTransaction(
+      email,
+      person1Name,
+      person2Name
+    );
+
+    if (!paymentResponse.success || !paymentResponse.token) {
+      throw new Error(paymentResponse.error || 'Gagal membuat transaksi');
     }
 
-    setIsProcessing(true);
-    setErrorMessage('');
+    if (window.snap) {
+      const baseUrl = window.location.origin;
 
-    try {
-      // Store email in localStorage for redirect pages
-      localStorage.setItem('payment_email', email);
+      window.snap.pay(paymentResponse.token, {
+        onSuccess: async function(result: any) {
+          console.log('Payment success:', result);
 
-      const paymentResponse = await midtransService.createTransaction(
-        email,
-        person1Name,
-        person2Name
-      );
+          try {
+            // Buat payload webhook
+           const payload = {
+  ...webhookService.createPayload(
+    person1Name,
+    person1Answers,
+    person1Profile!,
+    person2Name,
+    person2Answers,
+    person2Profile!,
+    compatibility
+  ),
+  email // tambahin email di payload
+};
 
-      if (!paymentResponse.success || !paymentResponse.token) {
-        throw new Error(paymentResponse.error || 'Gagal membuat transaksi');
-      }
 
-      if (window.snap) {
-        // Get current base URL
-        const baseUrl = window.location.origin;
-        
-        window.snap.pay(paymentResponse.token, {
-          onSuccess: function(result: any) {
-            console.log('Payment success:', result);
-            // Redirect to success page with payment details
-            const params = new URLSearchParams({
-              order_id: result.order_id || '',
-              status_code: result.status_code || '200',
-              transaction_status: result.transaction_status || 'settlement',
-              transaction_id: result.transaction_id || '',
-              email: email
-            });
-            window.location.href = `${baseUrl}/payment/success?${params.toString()}`;
-          },
-          
-          onPending: function(result: any) {
-            console.log('Payment pending:', result);
-            // Redirect to pending page
-            const params = new URLSearchParams({
-              order_id: result.order_id || '',
-              transaction_id: result.transaction_id || '',
-              payment_type: result.payment_type || '',
-              email: email
-            });
-            window.location.href = `${baseUrl}/payment/pending?${params.toString()}`;
-          },
-          
-          onError: function(result: any) {
-            console.log('Payment error:', result);
-            // Redirect to error page
-            const params = new URLSearchParams({
-              order_id: result.order_id || '',
-              transaction_id: result.transaction_id || '',
-              status_message: result.status_message || 'Pembayaran gagal'
-            });
-            window.location.href = `${baseUrl}/payment/error?${params.toString()}`;
-          },
-          
-          onClose: function() {
-            console.log('Payment popup closed');
-            setIsProcessing(false);
-            setErrorMessage('Pembayaran dibatalkan');
-            localStorage.removeItem('payment_email');
+            // Kirim ke n8n webhook
+            const webhookResult = await webhookService.sendToN8N(payload);
+
+            if (!webhookResult.success) {
+              console.warn('Webhook gagal dikirim:', webhookResult.error);
+            }
+          } catch (err) {
+            console.error('Error saat kirim webhook:', err);
           }
-        });
-      } else {
-        throw new Error('Midtrans Snap belum dimuat');
-      }
-    } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : 'Terjadi kesalahan tidak terduga');
-      setIsProcessing(false);
-      localStorage.removeItem('payment_email');
+
+          // Redirect ke halaman sukses
+          const params = new URLSearchParams({
+            order_id: result.order_id || '',
+            status_code: result.status_code || '200',
+            transaction_status: result.transaction_status || 'settlement',
+            transaction_id: result.transaction_id || '',
+            email: email
+          });
+          window.location.href = `${baseUrl}/payment/success?${params.toString()}`;
+        },
+
+        onPending: function(result: any) {
+          console.log('Payment pending:', result);
+          const params = new URLSearchParams({
+            order_id: result.order_id || '',
+            transaction_id: result.transaction_id || '',
+            payment_type: result.payment_type || '',
+            email: email
+          });
+          window.location.href = `${baseUrl}/payment/pending?${params.toString()}`;
+        },
+
+        onError: function(result: any) {
+          console.log('Payment error:', result);
+          const params = new URLSearchParams({
+            order_id: result.order_id || '',
+            transaction_id: result.transaction_id || '',
+            status_message: result.status_message || 'Pembayaran gagal'
+          });
+          window.location.href = `${baseUrl}/payment/error?${params.toString()}`;
+        },
+
+        onClose: function() {
+          console.log('Payment popup closed');
+          setIsProcessing(false);
+          setErrorMessage('Pembayaran dibatalkan');
+          localStorage.removeItem('payment_email');
+        }
+      });
+    } else {
+      throw new Error('Midtrans Snap belum dimuat');
     }
-  };
+  } catch (error) {
+    setErrorMessage(error instanceof Error ? error.message : 'Terjadi kesalahan tidak terduga');
+    setIsProcessing(false);
+    localStorage.removeItem('payment_email');
+  }
+};
+
 
   const handleBack = () => {
     router.push('/result');

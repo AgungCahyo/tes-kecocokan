@@ -121,7 +121,7 @@ export class MidtransService {
 // Configuration
 export const MIDTRANS_CONFIG = {
   webhookUrl: process.env.NEXT_PUBLIC_MIDTRANS_WEBHOOK_URL ,
-  enabled: process.env.NEXT_PUBLIC_MIDTRANS_ENABLED === 'true',
+  enabled: process.env.NEXT_PUBLIC_MIDTRANS_ENABLED ,
   snapUrl: process.env.NEXT_PUBLIC_MIDTRANS_SNAP_URL ,
   clientKey: process.env.NEXT_PUBLIC_MIDTRANS_CLIENT_KEY ,
 };
