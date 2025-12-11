@@ -37,14 +37,14 @@ export class MidtransService {
       
       const payload: MidtransPaymentRequest = {
         orderId,
-        amount: 1000, 
+        amount: 14899, 
         customerEmail: email,
         customerName: `${person1Name} & ${person2Name}`,
         itemDetails: [
           {
             id: 'premium-analysis',
             name: 'Analisis Premium AI - Personality Compatibility',
-            price: 50000,
+            price: 14899,
             quantity: 1
           }
         ]

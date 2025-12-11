@@ -63,8 +63,8 @@ export class WebhookService {
 // Configuration
 export const WEBHOOK_CONFIG = {
   // Ganti dengan URL webhook n8n Anda
-  url: process.env.NEXT_PUBLIC_N8N_WEBHOOK_URL || 'https://your-n8n-instance.com/webhook/personality-test',
+  url: process.env.NEXT_PUBLIC_N8N_WEBHOOK_URL,
   enabled: process.env.NEXT_PUBLIC_WEBHOOK_ENABLED === 'true',
 };
 
-export const webhookService = new WebhookService(WEBHOOK_CONFIG.url);
+export const webhookService = new WebhookService(WEBHOOK_CONFIG.url || '');

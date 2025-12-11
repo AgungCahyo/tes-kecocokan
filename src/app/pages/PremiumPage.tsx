@@ -36,8 +36,8 @@ const PremiumPage: React.FC<PremiumPageProps> = ({
   // Load Midtrans Snap script
   useEffect(() => {
     const snapScript = document.createElement('script');
-    snapScript.src = MIDTRANS_CONFIG.snapUrl;
-    snapScript.setAttribute('data-client-key', MIDTRANS_CONFIG.clientKey);
+    snapScript.src = MIDTRANS_CONFIG.snapUrl || '';
+    snapScript.setAttribute('data-client-key', MIDTRANS_CONFIG.clientKey  || '') ;
     snapScript.onload = () => setSnapLoaded(true);
     document.body.appendChild(snapScript);
 
@@ -162,7 +162,7 @@ const PremiumPage: React.FC<PremiumPageProps> = ({
         </div>
 
         {/* Features */}
-        <div className="bg-gradient-to-r from-purple-50 to-pink-50 rounded-2xl p-6 mb-8">
+        <div className="bg-linear-to-r from-purple-50 to-pink-50 rounded-2xl p-6 mb-8">
           <h2 className="text-xl font-bold text-gray-800 mb-4">
             Yang Akan Anda Dapatkan:
           </h2>
@@ -176,7 +176,7 @@ const PremiumPage: React.FC<PremiumPageProps> = ({
               'Saran personalisasi berdasarkan profil kalian'
             ].map((item, idx) => (
               <li key={idx} className="flex items-start gap-3">
-                <CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
+                <CheckCircle className="w-5 h-5 text-green-500 shrink-0 mt-0.5" />
                 <span className="text-gray-700">{item}</span>
               </li>
             ))}
@@ -184,7 +184,7 @@ const PremiumPage: React.FC<PremiumPageProps> = ({
         </div>
 
         {/* Pricing */}
-        <div className="bg-gradient-to-r from-yellow-50 to-orange-50 border-2 border-yellow-300 rounded-2xl p-6 mb-8 text-center">
+        <div className="bg-linear-to-r from-yellow-50 to-orange-50 border-2 border-yellow-300 rounded-2xl p-6 mb-8 text-center">
           <p className="text-gray-600 mb-2">Harga Spesial</p>
           <p className="text-4xl font-bold text-gray-800 mb-1">Rp 14.899</p>
           <p className="text-sm text-gray-500">Sekali bayar, hasil dikirim ke email</p>
@@ -216,7 +216,7 @@ const PremiumPage: React.FC<PremiumPageProps> = ({
             <button
               onClick={handlePayment}
               disabled={isProcessing || !snapLoaded}
-              className="w-full py-4 bg-gradient-to-r from-purple-500 to-pink-500 text-white text-lg font-semibold rounded-xl hover:from-purple-600 hover:to-pink-600 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              className="w-full py-4 bg-linear-to-r from-purple-500 to-pink-500 text-white text-lg font-semibold rounded-xl hover:from-purple-600 hover:to-pink-600 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
               {isProcessing ? (
                 <>
