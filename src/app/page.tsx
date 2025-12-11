@@ -1,3 +1,4 @@
+// src/app/page.tsx
 'use client'
 
 import React, { useState } from 'react';
@@ -6,21 +7,20 @@ import Intro from './pages/intro';
 import Person2 from './pages/person2';
 import QuestionsPage from './pages/QuestionPage';
 import Result from './pages/ResultPage';
+import PremiumPage from './pages/PremiumPage';
+import { StepType, TestResult } from '@/types';
 
-const PersonalityCompatibilityTest = () => {
-  const [step, setStep] = useState('intro');
-  const [currentPerson, setCurrentPerson] = useState(1);
-  const [currentQuestion, setCurrentQuestion] = useState(0);
-  const [person1Answers, setPerson1Answers] = useState([]);
-  const [person2Answers, setPerson2Answers] = useState([]);
-  const [result, setResult] = useState(null);
-  const [person1Name, setPerson1Name] = useState('');
-  const [person2Name, setPerson2Name] = useState('');
+const PersonalityCompatibilityTest: React.FC = () => {
+  const [step, setStep] = useState<StepType>('intro');
+  const [currentPerson, setCurrentPerson] = useState<1 | 2>(1);
+  const [currentQuestion, setCurrentQuestion] = useState<number>(0);
+  const [person1Answers, setPerson1Answers] = useState<number[]>([]);
+  const [person2Answers, setPerson2Answers] = useState<number[]>([]);
+  const [result, setResult] = useState<TestResult | null>(null);
+  const [person1Name, setPerson1Name] = useState<string>('');
+  const [person2Name, setPerson2Name] = useState<string>('');
 
-  const p1Profile = calculatePersonality(person1Answers);
-  const p2Profile = calculatePersonality(person2Answers);
-  const compatibility = calculateCompatibility(p1Profile, p2Profile);
-  const handleAnswer = (value) => {
+  const handleAnswer = (value: number) => {
     if (currentPerson === 1) {
       const newAnswers = [...person1Answers];
       newAnswers[currentQuestion] = value;
@@ -71,9 +71,12 @@ const PersonalityCompatibilityTest = () => {
     setResult(null);
   };
 
+  const handlePremiumAnalysis = () => {
+    setStep('premium');
+  };
+
   return (
-    <div className="min-h-screen bg-linear-to-br from-indigo-50 via-purple-50 to-pink-50">
-      {/* Intro Screen */}
+    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50">
       {step === 'intro' && (
         <Intro
           setStep={setStep}
@@ -84,7 +87,6 @@ const PersonalityCompatibilityTest = () => {
         />
       )}
 
-      {/* Person 2 Intro Screen */}
       {step === 'person2intro' && (
         <Person2
           person2Name={person2Name}
@@ -93,7 +95,6 @@ const PersonalityCompatibilityTest = () => {
         />
       )}
 
-      {/* Test Screen */}
       {step === 'test' && (
         <QuestionsPage
           person1Name={person1Name}
@@ -108,12 +109,21 @@ const PersonalityCompatibilityTest = () => {
         />
       )}
 
-      {/* Results Screen */}
       {step === 'result' && result && (
         <Result
           result={result}
           resetTest={resetTest}
           getPersonalityDescription={getPersonalityDescription}
+          onPremiumAnalysis={handlePremiumAnalysis}
+        />
+      )}
+
+      {step === 'premium' && result && (
+        <PremiumPage
+          result={result}
+          person1Answers={person1Answers}
+          person2Answers={person2Answers}
+          onBack={() => setStep('result')}
         />
       )}
     </div>

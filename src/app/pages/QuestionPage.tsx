@@ -1,6 +1,22 @@
+// src/app/pages/QuestionPage.tsx
+import React from 'react';
 import { ArrowLeft, ArrowRight } from "lucide-react";
 import { scaleOptions } from "../data/questions";
-export default function QuestionsPage({
+import { Question } from '@/types';
+
+interface QuestionsPageProps {
+  person1Name: string;
+  person2Name: string;
+  currentPerson: 1 | 2;
+  currentQuestion: number;
+  questions: Question[];
+  person1Answers: number[];
+  person2Answers: number[];
+  handleAnswer: (value: number) => void;
+  handlePrevious: () => void;
+}
+
+const QuestionsPage: React.FC<QuestionsPageProps> = ({
   person1Name,
   person2Name,
   currentPerson,
@@ -10,7 +26,7 @@ export default function QuestionsPage({
   person2Answers,
   handleAnswer,
   handlePrevious
-}) {
+}) => {
   const progress = ((currentQuestion + 1) / questions.length) * 100;
   const currentAnswer =
     currentPerson === 1
@@ -39,7 +55,7 @@ export default function QuestionsPage({
         {/* Progress Bar */}
         <div className="w-full bg-gray-200 rounded-full h-3">
           <div
-            className="bg-linear-to-r from-purple-500 to-pink-500 h-3 rounded-full transition-all duration-300"
+            className="bg-gradient-to-r from-purple-500 to-pink-500 h-3 rounded-full transition-all duration-300"
             style={{ width: `${progress}%` }}
           />
         </div>
@@ -92,7 +108,7 @@ export default function QuestionsPage({
         {currentAnswer !== undefined && (
           <button
             onClick={() => handleAnswer(currentAnswer)}
-            className="flex-1 py-3 bg-linear-to-r from-purple-500 to-pink-500 text-white font-semibold rounded-xl hover:from-purple-600 hover:to-pink-600 transition-all flex items-center justify-center gap-2"
+            className="flex-1 py-3 bg-gradient-to-r from-purple-500 to-pink-500 text-white font-semibold rounded-xl hover:from-purple-600 hover:to-pink-600 transition-all flex items-center justify-center gap-2"
           >
             {currentQuestion < questions.length - 1 ? (
               <>Lanjut <ArrowRight className="w-5 h-5" /></>
@@ -106,4 +122,6 @@ export default function QuestionsPage({
       </div>
     </div>
   );
-}
+};
+
+export default QuestionsPage;
