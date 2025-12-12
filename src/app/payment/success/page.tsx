@@ -185,115 +185,115 @@ if (!statusCode || !validStatusCodes.includes(statusCode) || !validTransactionSt
 
   // Success state
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 p-4">
-      <div className="max-w-2xl w-full bg-white rounded-3xl shadow-2xl p-8 md:p-12">
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-20 h-20 bg-green-100 rounded-full mb-6">
-            <CheckCircle className="w-12 h-12 text-green-500" />
-          </div>
-          <h1 className="text-3xl md:text-4xl font-bold text-gray-800 mb-2">
-            Pembayaran Berhasil!
-          </h1>
-          <p className="text-lg text-gray-600">
-            Terima kasih atas pembelian Anda
-          </p>
+  <div className="min-h-screen flex items-center justify-center bg-bg-alt p-4">
+    <div className="max-w-2xl w-full bg-white rounded-3xl shadow-lg border border-border p-8 md:p-12">
+      <div className="text-center mb-8">
+        <div className="inline-flex items-center justify-center w-20 h-20 bg-green-50 rounded-2xl mb-6">
+          <CheckCircle className="w-12 h-12 text-green-500" strokeWidth={2.5} />
         </div>
+        <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-2">
+          Pembayaran Berhasil!
+        </h1>
+        <p className="text-lg text-text-muted">
+          Terima kasih atas pembelian Anda
+        </p>
+      </div>
 
-        {/* Order Details */}
-        {orderDetails && (
-          <div className="bg-gradient-to-r from-purple-50 to-pink-50 rounded-2xl p-6 mb-8">
-            <h2 className="text-xl font-bold text-gray-800 mb-4">
-              Detail Pesanan
-            </h2>
-            <div className="space-y-2 text-gray-700">
-              <div className="flex justify-between">
-                <span className="font-medium">Order ID:</span>
-                <span className="text-right">{orderDetails.orderId}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="font-medium">Transaction ID:</span>
-                <span className="text-right break-all">{orderDetails.transactionId}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="font-medium">Email:</span>
-                <span className="text-right break-all">{orderDetails.email}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="font-medium">Total:</span>
-                <span className="text-right font-bold">{orderDetails.amount}</span>
-              </div>
+      {/* Order Details */}
+      {orderDetails && (
+        <div className="bg-secondary border border-border rounded-2xl p-6 mb-8">
+          <h2 className="text-xl font-bold text-gray-900 mb-4">
+            Detail Pesanan
+          </h2>
+          <div className="space-y-2 text-gray-700">
+            <div className="flex justify-between py-2 border-b border-border">
+              <span className="font-medium">Order ID:</span>
+              <span className="text-right">{orderDetails.orderId}</span>
             </div>
-          </div>
-        )}
-
-        {/* What's Next */}
-        <div className="bg-blue-50 border-2 border-blue-200 rounded-2xl p-6 mb-8">
-          <div className="flex items-start gap-4">
-            <Mail className="w-8 h-8 text-blue-500 flex-shrink-0 mt-1" />
-            <div>
-              <h3 className="text-lg font-bold text-gray-800 mb-2">
-                Langkah Selanjutnya
-              </h3>
-              <ul className="space-y-2 text-sm text-gray-700">
-                <li className="flex items-start gap-2">
-                  <span className="text-blue-500 font-bold">1.</span>
-                  <span>Analisis premium Anda sedang diproses oleh AI kami</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="text-blue-500 font-bold">2.</span>
-                  <span>Hasil akan dikirim ke email Anda dalam 5-10 menit</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="text-blue-500 font-bold">3.</span>
-                  <span>Cek folder inbox atau spam untuk email dari kami</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="text-blue-500 font-bold">4.</span>
-                  <span>Analisis akan dikirim dalam format PDF yang mudah dibaca</span>
-                </li>
-              </ul>
+            <div className="flex justify-between py-2 border-b border-border">
+              <span className="font-medium">Transaction ID:</span>
+              <span className="text-right break-all text-sm">{orderDetails.transactionId}</span>
+            </div>
+            <div className="flex justify-between py-2 border-b border-border">
+              <span className="font-medium">Email:</span>
+              <span className="text-right break-all text-sm">{orderDetails.email}</span>
+            </div>
+            <div className="flex justify-between py-2">
+              <span className="font-medium">Total:</span>
+              <span className="text-right font-bold text-primary">{orderDetails.amount}</span>
             </div>
           </div>
         </div>
+      )}
 
-        {/* Tips */}
-        <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4 mb-8">
-          <div className="flex items-start gap-3">
-            <FileText className="w-5 h-5 text-yellow-600 flex-shrink-0 mt-0.5" />
-            <div className="text-sm text-gray-700">
-              <p className="font-semibold mb-1">💡 Tips:</p>
-              <p>Jika email tidak masuk dalam 15 menit, silakan cek folder spam atau hubungi support kami dengan menyertakan Order ID di atas.</p>
-            </div>
+      {/* What's Next */}
+      <div className="bg-blue-50 border-2 border-blue-200 rounded-2xl p-6 mb-8">
+        <div className="flex items-start gap-4">
+          <Mail className="w-8 h-8 text-blue-500 flex-shrink-0 mt-1" strokeWidth={2.5} />
+          <div>
+            <h3 className="text-lg font-bold text-gray-900 mb-2">
+              Langkah Selanjutnya
+            </h3>
+            <ul className="space-y-2 text-sm text-gray-700">
+              <li className="flex items-start gap-2">
+                <span className="text-blue-500 font-bold">1.</span>
+                <span>Analisis premium sedang diproses oleh AI kami</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="text-blue-500 font-bold">2.</span>
+                <span>Hasil akan dikirim ke email dalam 5-10 menit</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="text-blue-500 font-bold">3.</span>
+                <span>Cek folder inbox atau spam untuk email dari kami</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="text-blue-500 font-bold">4.</span>
+                <span>Analisis dikirim dalam format PDF yang mudah dibaca</span>
+              </li>
+            </ul>
           </div>
-        </div>
-
-        {/* Action Buttons */}
-        <div className="space-y-3">
-          <button
-            onClick={handleBackToResult}
-            className="w-full py-3 bg-gradient-to-r from-purple-500 to-pink-500 text-white font-semibold rounded-xl hover:from-purple-600 hover:to-pink-600 transition-all flex items-center justify-center gap-2"
-          >
-            Lihat Hasil Tes Gratis
-            <ArrowRight className="w-5 h-5" />
-          </button>
-          
-          <button
-            onClick={handleBackToHome}
-            className="w-full py-3 bg-gray-200 text-gray-700 font-semibold rounded-xl hover:bg-gray-300 transition-all"
-          >
-            Kembali ke Beranda
-          </button>
-        </div>
-
-        {/* Footer Note */}
-        <div className="mt-8 pt-6 border-t border-gray-200 text-center">
-          <p className="text-xs text-gray-500">
-            Butuh bantuan? Hubungi kami di support@personalitytest.com
-          </p>
         </div>
       </div>
+
+      {/* Tips */}
+      <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4 mb-8">
+        <div className="flex items-start gap-3">
+          <FileText className="w-5 h-5 text-yellow-600 flex-shrink-0 mt-0.5" strokeWidth={2.5} />
+          <div className="text-sm text-gray-700">
+            <p className="font-semibold mb-1">💡 Tips:</p>
+            <p>Jika email tidak masuk dalam 15 menit, cek folder spam atau hubungi support dengan Order ID di atas.</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Action Buttons */}
+      <div className="space-y-3">
+        <button
+          onClick={handleBackToResult}
+          className="w-full py-3 bg-primary hover:bg-primary-hover text-white font-semibold rounded-xl transition-all duration-200 flex items-center justify-center gap-2 shadow-sm"
+        >
+          Lihat Hasil Tes Gratis
+          <ArrowRight className="w-5 h-5" strokeWidth={2.5} />
+        </button>
+        
+        <button
+          onClick={handleBackToHome}
+          className="w-full py-3 bg-secondary hover:bg-secondary-dark text-gray-800 font-semibold rounded-xl transition-all duration-200"
+        >
+          Kembali ke Beranda
+        </button>
+      </div>
+
+      {/* Footer */}
+      <div className="mt-8 pt-6 border-t border-border text-center">
+        <p className="text-xs text-text-muted">
+          Butuh bantuan? Hubungi support@personalitytest.com
+        </p>
+      </div>
     </div>
-  );
+  </div>
+);
 }
 
 export default function PaymentSuccessPage() {

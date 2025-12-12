@@ -1,4 +1,4 @@
-// src/app/premium/page.tsx (UPDATED with redirect URLs)
+// src/app/premium/page.tsx - Updated Clean Gen Z Style
 'use client'
 
 import React, { useState, useEffect } from 'react';
@@ -31,14 +31,12 @@ export default function PremiumPage() {
   const [errorMessage, setErrorMessage] = useState<string>('');
   const [snapLoaded, setSnapLoaded] = useState<boolean>(false);
 
-  // Redirect if data missing
   useEffect(() => {
     if (!person1Name || !person2Name || !person1Profile || !person2Profile || !compatibility) {
       router.push('/');
     }
   }, [person1Name, person2Name, person1Profile, person2Profile, compatibility, router]);
 
-  // Load Midtrans Snap script
   useEffect(() => {
     const snapScript = document.createElement('script');
     snapScript.src = MIDTRANS_CONFIG.snapUrl || '';
@@ -51,111 +49,96 @@ export default function PremiumPage() {
     };
   }, []);
 
-const handlePayment = async () => {
-  if (!email || !email.includes('@')) {
-    setErrorMessage('Mohon masukkan email yang valid');
-    return;
-  }
-
-  setIsProcessing(true);
-  setErrorMessage('');
-
-  try {
-    // Store email in localStorage for redirect pages
-    localStorage.setItem('payment_email', email);
-
-    const paymentResponse = await midtransService.createTransaction(
-      email,
-      person1Name,
-      person2Name
-    );
-
-    if (!paymentResponse.success || !paymentResponse.token) {
-      throw new Error(paymentResponse.error || 'Gagal membuat transaksi');
+  const handlePayment = async () => {
+    if (!email || !email.includes('@')) {
+      setErrorMessage('Mohon masukkan email yang valid');
+      return;
     }
 
-    if (window.snap) {
-      const baseUrl = window.location.origin;
+    setIsProcessing(true);
+    setErrorMessage('');
 
-      window.snap.pay(paymentResponse.token, {
-        onSuccess: async function(result: any) {
-          console.log('Payment success:', result);
+    try {
+      localStorage.setItem('payment_email', email);
 
-          try {
-            // Buat payload webhook
-           const payload = {
-  ...webhookService.createPayload(
-    person1Name,
-    person1Answers,
-    person1Profile!,
-    person2Name,
-    person2Answers,
-    person2Profile!,
-    compatibility
-  ),
-  email // tambahin email di payload
-};
+      const paymentResponse = await midtransService.createTransaction(
+        email,
+        person1Name,
+        person2Name
+      );
 
+      if (!paymentResponse.success || !paymentResponse.token) {
+        throw new Error(paymentResponse.error || 'Gagal membuat transaksi');
+      }
 
-            // Kirim ke n8n webhook
-            const webhookResult = await webhookService.sendToN8N(payload);
+      if (window.snap) {
+        const baseUrl = window.location.origin;
 
-            if (!webhookResult.success) {
-              console.warn('Webhook gagal dikirim:', webhookResult.error);
+        window.snap.pay(paymentResponse.token, {
+          onSuccess: async function(result: any) {
+            try {
+              const payload = {
+                ...webhookService.createPayload(
+                  person1Name,
+                  person1Answers,
+                  person1Profile!,
+                  person2Name,
+                  person2Answers,
+                  person2Profile!,
+                  compatibility
+                ),
+                email
+              };
+
+              await webhookService.sendToN8N(payload);
+            } catch (err) {
+              console.error('Error saat kirim webhook:', err);
             }
-          } catch (err) {
-            console.error('Error saat kirim webhook:', err);
+
+            const params = new URLSearchParams({
+              order_id: result.order_id || '',
+              status_code: result.status_code || '200',
+              transaction_status: result.transaction_status || 'settlement',
+              transaction_id: result.transaction_id || '',
+              email: email
+            });
+            window.location.href = `${baseUrl}/payment/success?${params.toString()}`;
+          },
+
+          onPending: function(result: any) {
+            const params = new URLSearchParams({
+              order_id: result.order_id || '',
+              transaction_id: result.transaction_id || '',
+              payment_type: result.payment_type || '',
+              email: email
+            });
+            window.location.href = `${baseUrl}/payment/pending?${params.toString()}`;
+          },
+
+          onError: function(result: any) {
+            const params = new URLSearchParams({
+              order_id: result.order_id || '',
+              transaction_id: result.transaction_id || '',
+              status_message: result.status_message || 'Pembayaran gagal'
+            });
+            window.location.href = `${baseUrl}/payment/error?${params.toString()}`;
+          },
+
+          onClose: function() {
+            setIsProcessing(false);
+            setErrorMessage('Pembayaran dibatalkan');
+            localStorage.removeItem('payment_email');
           }
-
-          // Redirect ke halaman sukses
-          const params = new URLSearchParams({
-            order_id: result.order_id || '',
-            status_code: result.status_code || '200',
-            transaction_status: result.transaction_status || 'settlement',
-            transaction_id: result.transaction_id || '',
-            email: email
-          });
-          window.location.href = `${baseUrl}/payment/success?${params.toString()}`;
-        },
-
-        onPending: function(result: any) {
-          console.log('Payment pending:', result);
-          const params = new URLSearchParams({
-            order_id: result.order_id || '',
-            transaction_id: result.transaction_id || '',
-            payment_type: result.payment_type || '',
-            email: email
-          });
-          window.location.href = `${baseUrl}/payment/pending?${params.toString()}`;
-        },
-
-        onError: function(result: any) {
-          console.log('Payment error:', result);
-          const params = new URLSearchParams({
-            order_id: result.order_id || '',
-            transaction_id: result.transaction_id || '',
-            status_message: result.status_message || 'Pembayaran gagal'
-          });
-          window.location.href = `${baseUrl}/payment/error?${params.toString()}`;
-        },
-
-        onClose: function() {
-          console.log('Payment popup closed');
-          setIsProcessing(false);
-          setErrorMessage('Pembayaran dibatalkan');
-          localStorage.removeItem('payment_email');
-        }
-      });
-    } else {
-      throw new Error('Midtrans Snap belum dimuat');
+        });
+      } else {
+        throw new Error('Midtrans Snap belum dimuat');
+      }
+    } catch (error) {
+      setErrorMessage(error instanceof Error ? error.message : 'Terjadi kesalahan tidak terduga');
+      setIsProcessing(false);
+      localStorage.removeItem('payment_email');
     }
-  } catch (error) {
-    setErrorMessage(error instanceof Error ? error.message : 'Terjadi kesalahan tidak terduga');
-    setIsProcessing(false);
-    localStorage.removeItem('payment_email');
-  }
-};
-
+  };
 
   const handleBack = () => {
     router.push('/result');
@@ -166,24 +149,26 @@ const handlePayment = async () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50">
-      <div className="max-w-4xl mx-auto p-4 py-8">
-        <div className="bg-white rounded-3xl shadow-2xl p-8 md:p-12">
+    <div className="min-h-screen bg-bg-alt">
+      <div className="max-w-3xl mx-auto p-4 py-8">
+        <div className="bg-white rounded-3xl shadow-lg border border-border p-8 md:p-12">
           
           {/* Header */}
           <div className="text-center mb-8">
-            <Sparkles className="w-16 h-16 mx-auto mb-4 text-purple-500" />
-            <h1 className="text-4xl font-bold text-gray-800 mb-2">
+            <div className="inline-flex items-center justify-center w-16 h-16 bg-primary-light rounded-2xl mb-4">
+              <Sparkles className="w-8 h-8 text-primary" strokeWidth={2.5} />
+            </div>
+            <h1 className="text-4xl font-bold text-gray-900 mb-2">
               Analisis Premium AI
             </h1>
-            <p className="text-lg text-gray-600">
-              Dapatkan analisis mendalam dari AI tentang hubungan kalian
+            <p className="text-lg text-text-muted">
+              Dapatkan insight mendalam dari AI tentang hubungan kalian
             </p>
           </div>
 
           {/* Features */}
-          <div className="bg-gradient-to-r from-purple-50 to-pink-50 rounded-2xl p-6 mb-8">
-            <h2 className="text-xl font-bold text-gray-800 mb-4">
+          <div className="bg-secondary rounded-2xl p-6 mb-8 border border-border">
+            <h2 className="text-xl font-bold text-gray-900 mb-4">
               Yang Akan Anda Dapatkan:
             </h2>
             <ul className="space-y-3">
@@ -196,7 +181,7 @@ const handlePayment = async () => {
                 'Saran personalisasi berdasarkan profil kalian'
               ].map((item, idx) => (
                 <li key={idx} className="flex items-start gap-3">
-                  <CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
+                  <CheckCircle className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" strokeWidth={2.5} />
                   <span className="text-gray-700">{item}</span>
                 </li>
               ))}
@@ -204,16 +189,16 @@ const handlePayment = async () => {
           </div>
 
           {/* Pricing */}
-          <div className="bg-gradient-to-r from-yellow-50 to-orange-50 border-2 border-yellow-300 rounded-2xl p-6 mb-8 text-center">
-            <p className="text-gray-600 mb-2">Harga Spesial</p>
-            <p className="text-4xl font-bold text-gray-800 mb-1">Rp 14.899</p>
-            <p className="text-sm text-gray-500">Sekali bayar, hasil dikirim ke email</p>
+          <div className="bg-primary-light border-2 border-primary rounded-2xl p-6 mb-8 text-center">
+            <p className="text-text-muted mb-2 font-medium">Harga Spesial</p>
+            <p className="text-5xl font-bold text-primary mb-1">Rp 14.899</p>
+            <p className="text-sm text-text-muted">Sekali bayar • Hasil dikirim ke email</p>
           </div>
 
           {/* Form */}
           <div className="space-y-4 mb-6">
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">
+              <label className="block text-sm font-semibold text-gray-700 mb-2 ml-1">
                 Email untuk menerima hasil analisis
               </label>
               <input
@@ -221,63 +206,53 @@ const handlePayment = async () => {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="nama@email.com"
-                className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-purple-400 focus:outline-none text-gray-800"
+                className="w-full px-4 py-3 border-2 border-border rounded-xl focus:border-primary focus:outline-none text-gray-900 transition-colors"
               />
             </div>
 
             {errorMessage && (
-              <div className="flex items-center gap-2 text-red-600 bg-red-50 p-3 rounded-lg">
-                <XCircle className="w-5 h-5" />
-                <span>{errorMessage}</span>
+              <div className="flex items-center gap-2 text-primary bg-primary-light p-3 rounded-xl border border-primary">
+                <XCircle className="w-5 h-5" strokeWidth={2.5} />
+                <span className="text-sm font-medium">{errorMessage}</span>
               </div>
             )}
 
             <button
               onClick={handlePayment}
               disabled={isProcessing || !snapLoaded}
-              className="w-full py-4 bg-gradient-to-r from-purple-500 to-pink-500 text-white text-lg font-semibold rounded-xl hover:from-purple-600 hover:to-pink-600 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              className="w-full py-4 bg-primary hover:bg-primary-hover disabled:opacity-50 disabled:cursor-not-allowed text-white text-lg font-semibold rounded-xl transition-all duration-200 flex items-center justify-center gap-2 shadow-sm"
             >
               {isProcessing ? (
                 <>
-                  <Loader className="w-6 h-6 animate-spin" />
+                  <Loader className="w-6 h-6 animate-spin" strokeWidth={2.5} />
                   Memproses...
                 </>
               ) : !snapLoaded ? (
                 <>
-                  <Loader className="w-6 h-6 animate-spin" />
-                  Memuat sistem pembayaran...
+                  <Loader className="w-6 h-6 animate-spin" strokeWidth={2.5} />
+                  Memuat...
                 </>
               ) : (
                 <>
-                  <CreditCard className="w-6 h-6" />
+                  <CreditCard className="w-6 h-6" strokeWidth={2.5} />
                   Bayar & Dapatkan Analisis
                 </>
               )}
             </button>
 
-            <p className="text-center text-sm text-gray-500">
-              Pembayaran aman dengan Midtrans
+            <p className="text-center text-sm text-text-muted">
+              🔒 Pembayaran aman dengan Midtrans
             </p>
           </div>
 
           {/* Back Button */}
           <button
             onClick={handleBack}
-            className="w-full py-3 bg-gray-200 text-gray-700 font-semibold rounded-xl hover:bg-gray-300 transition-all flex items-center justify-center gap-2"
+            className="w-full py-3 bg-secondary hover:bg-secondary-dark text-gray-800 font-semibold rounded-xl transition-all duration-200 flex items-center justify-center gap-2"
           >
-            <ArrowLeft className="w-5 h-5" />
+            <ArrowLeft className="w-5 h-5" strokeWidth={2.5} />
             Kembali ke Hasil
           </button>
-
-          {/* Security Note */}
-          <div className="mt-6 text-center">
-            <p className="text-xs text-gray-500 mb-2">
-              🔒 Pembayaran diproses secara aman oleh Midtrans
-            </p>
-            <p className="text-xs text-gray-400">
-              Data Anda dilindungi dengan enkripsi SSL
-            </p>
-          </div>
         </div>
       </div>
     </div>

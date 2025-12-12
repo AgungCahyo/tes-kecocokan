@@ -1,4 +1,6 @@
-// src/app/person2/page.tsx
+
+// src/app/person2/page.tsx - Updated
+
 'use client'
 
 import React from 'react';
@@ -25,22 +27,26 @@ export default function Person2Page() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50">
-      <div className="max-w-2xl w-full bg-white rounded-3xl shadow-2xl p-8 md:p-12">
+    <div className="min-h-screen flex items-center justify-center p-4 bg-bg-alt">
+      <div className="max-w-2xl w-full bg-white rounded-3xl shadow-lg border border-border p-8 md:p-12">
         <div className="text-center">
-          <Users className="w-20 h-20 mx-auto mb-6 text-purple-500" />
-          <h1 className="text-4xl font-bold text-gray-800 mb-4">
+          <div className="inline-flex items-center justify-center w-20 h-20 bg-primary-light rounded-2xl mb-6">
+            <Users className="w-10 h-10 text-primary" strokeWidth={2.5} />
+          </div>
+          
+          <h1 className="text-4xl font-bold text-gray-900 mb-3">
             Giliran {person2Name}!
           </h1>
-          <p className="text-lg text-gray-600 mb-8">
+          <p className="text-lg text-text-muted mb-8 max-w-md mx-auto">
             {person1Name} sudah selesai mengisi tes. Sekarang giliran {person2Name} untuk menjawab pertanyaan yang sama.
           </p>
 
           <button
             onClick={handleStart}
-            className="w-full py-4 bg-gradient-to-r from-purple-500 to-pink-500 text-white text-lg font-semibold rounded-xl hover:from-purple-600 hover:to-pink-600 transition-all flex items-center justify-center gap-2"
+            className="w-full py-4 bg-primary hover:bg-primary-hover text-white text-lg font-semibold rounded-xl transition-all duration-200 flex items-center justify-center gap-2 shadow-sm"
           >
-            Mulai Tes {person2Name} <ArrowRight className="w-6 h-6" />
+            Mulai Tes {person2Name} 
+            <ArrowRight className="w-6 h-6" strokeWidth={2.5} />
           </button>
         </div>
       </div>
