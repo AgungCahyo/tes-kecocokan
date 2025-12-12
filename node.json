@@ -1,0 +1,92 @@
+ {
+  "nodes": [
+    {
+      "parameters": {
+        "jsCode": "const data = $('Code in JavaScript').all()[0].json;\nconst aiResponse = $input.first().json.output;\n\n// Format untuk WhatsApp bubble chat - clean & mobile-friendly\nfunction formatWhatsAppMessage(data, analysis) {\n  // Header section\n  let message = `✨ *HASIL ANALISIS KEPRIBADIAN* ✨\n\nHalo *${data.person1.name}* & *${data.person2.name}*! 👋\n\nTerima kasih sudah menggunakan layanan kami. Hasil analisis AI sudah siap! 🤖\n\n─────────────────────\n\n💝 *SKOR KECOCOKAN*\n\n🎯 *${data.analysis.overallScore}%*\n${data.analysis.scoreCategory}\n\n─────────────────────\n\n📊 *RINCIAN SKOR*\n\n🎭 *Kepribadian*\n${data.analysis.breakdown.personality.score}% ${getScoreEmoji(data.analysis.breakdown.personality.score)}\n\n💬 *Komunikasi*\n${data.analysis.breakdown.communication.score}% ${getScoreEmoji(data.analysis.breakdown.communication.score)}\n\n❤️ *Nilai & Love Language*\n${data.analysis.breakdown.values.score}% ${getScoreEmoji(data.analysis.breakdown.values.score)}\n\n🏡 *Gaya Hidup*\n${data.analysis.breakdown.lifestyle.score}% ${getScoreEmoji(data.analysis.breakdown.lifestyle.score)}`;\n\n  // Add strengths\n  if (data.analysis.strengths && data.analysis.strengths.length > 0) {\n    message += `\\n\\n─────────────────────\\n\\n💪 *KEKUATAN HUBUNGAN*\\n`;\n    data.analysis.strengths.forEach((strength, idx) => {\n      message += `\\n${idx + 1}. ${strength}`;\n    });\n  }\n\n  // Add challenges\n  if (data.analysis.challenges && data.analysis.challenges.length > 0) {\n    message += `\\n\\n─────────────────────\\n\\n⚠️ *PERLU PERHATIAN*\\n`;\n    data.analysis.challenges.forEach((challenge, idx) => {\n      message += `\\n${idx + 1}. ${challenge}`;\n    });\n  }\n\n  // Footer\n  message += `\\n\\n─────────────────────\\n\\n💡 _Analisis detail lengkap akan dikirim terpisah_\\n\\nSemoga membantu! 💕✨`;\n\n  return message;\n}\n\n// Format AI analysis as separate detailed message\nfunction formatDetailedAnalysis(analysis) {\n  let message = `🤖 *ANALISIS AI - DETAIL LENGKAP*\\n\\n`;\n  \n  // Clean and format for WhatsApp\n  const cleaned = cleanMarkdownForWhatsApp(analysis);\n  message += cleaned;\n  \n  message += `\\n\\n─────────────────────\\n\\n💬 *Butuh bantuan?*\\nEmail: support@personalitytest.com\\n\\n_Personality Test © 2025_`;\n  \n  return message;\n}\n\nfunction getScoreEmoji(score) {\n  if (score >= 80) return '🌟';\n  if (score >= 70) return '👍';\n  if (score >= 60) return '✅';\n  return '⚡';\n}\n\nfunction cleanMarkdownForWhatsApp(text) {\n  let cleaned = text;\n  \n  // Convert ### headers to bold\n  cleaned = cleaned.replace(/### (.*?)$/gm, '\\n*$1*');\n  \n  // Convert ## headers to bold with separator\n  cleaned = cleaned.replace(/## (.*?)$/gm, '\\n\\n*$1*\\n');\n  \n  // Keep bold formatting (** to *)\n  cleaned = cleaned.replace(/\\*\\*(.*?)\\*\\*/g, '*$1*');\n  \n  // Format lists - simple bullet\n  cleaned = cleaned.replace(/^- (.*?)$/gm, '• $1');\n  \n  // Remove excessive newlines (max 2)\n  cleaned = cleaned.replace(/\\n{3,}/g, '\\n\\n');\n  \n  // Clean up spacing around sections\n  cleaned = cleaned.replace(/\\n\\n\\*/g, '\\n\\n*');\n  \n  return cleaned.trim();\n}\n\n// Get phone number from webhook data\nconst phoneNumber = data.phoneNumber || '6281234567890';\n\n// Create summary message\nconst summaryMessage = formatWhatsAppMessage(data, aiResponse);\n\n// Create detailed analysis message\nconst detailedMessage = formatDetailedAnalysis(aiResponse);\n\n// WhatsApp limit per message\nconst maxLength = 4096;\n\n// Function to split long messages intelligently\nfunction splitMessage(text, maxLen) {\n  if (text.length <= maxLen) return [text];\n  \n  const parts = [];\n  let remaining = text;\n  \n  while (remaining.length > 0) {\n    if (remaining.length <= maxLen) {\n      parts.push(remaining);\n      break;\n    }\n    \n    // Try to split at natural break points\n    let splitPoint = maxLen;\n    \n    // Look for paragraph break\n    const paragraphBreak = remaining.lastIndexOf('\\n\\n', maxLen);\n    if (paragraphBreak > maxLen * 0.7) {\n      splitPoint = paragraphBreak + 2;\n    } else {\n      // Look for line break\n      const lineBreak = remaining.lastIndexOf('\\n', maxLen);\n      if (lineBreak > maxLen * 0.7) {\n        splitPoint = lineBreak + 1;\n      } else {\n        // Look for space\n        const spaceBreak = remaining.lastIndexOf(' ', maxLen);\n        if (spaceBreak > maxLen * 0.8) {\n          splitPoint = spaceBreak + 1;\n        }\n      }\n    }\n    \n    parts.push(remaining.substring(0, splitPoint).trim());\n    remaining = remaining.substring(splitPoint).trim();\n  }\n  \n  return parts;\n}\n\n// Split detailed message if needed\nconst detailedParts = splitMessage(detailedMessage, maxLength);\n\n// Prepare all messages\nconst allMessages = [];\n\n// First message: Summary\nallMessages.push({\n  to: phoneNumber,\n  body: summaryMessage,\n  type: 'summary'\n});\n\n// Following messages: Detailed analysis\ndetailedParts.forEach((part, idx) => {\n  let messageBody = part;\n  \n  // Add part indicator if multiple parts\n  if (detailedParts.length > 1) {\n    messageBody = `📱 *Bagian ${idx + 1}/${detailedParts.length}*\\n\\n${part}`;\n  }\n  \n  allMessages.push({\n    to: phoneNumber,\n    body: messageBody,\n    type: 'detail',\n    part: idx + 1,\n    totalParts: detailedParts.length\n  });\n});\n\n// Return all messages for n8n to process\n// Note: You'll need to add a \"Split In Batches\" or \"Loop\" node to send multiple messages\nreturn allMessages.map(msg => ({\n  json: {\n    to: msg.to,\n    body: msg.body,\n    messageType: msg.type,\n    part: msg.part,\n    totalParts: msg.totalParts,\n    \n    // Metadata\n    metadata: {\n      person1: data.person1.name,\n      person2: data.person2.name,\n      score: data.analysis.overallScore,\n      timestamp: data.timestamp,\n      totalMessages: allMessages.length,\n      version: '3.0-bubble-friendly'\n    }\n  }\n}));"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1056, 0],
+      "id": "32dbea80-65f3-4e99-a115-3373457064dc",
+      "name": "Code in JavaScript2"
+    },
+    {
+      "parameters": {
+        "batchSize": 1,
+        "options": {
+          "waitBetweenBatches": {
+            "waitBetweenBatches": true,
+            "waitAmount": 5,
+            "waitUnit": "seconds"
+          }
+        }
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 1,
+      "position": [1200, 0],
+      "id": "split-batches-1",
+      "name": "Split In Batches"
+    },
+    {
+      "parameters": {
+        "operation": "send",
+        "phoneNumberId": "=873342085859152",
+        "recipientPhoneNumber": "={{ $json.to }}",
+        "textBody": "={{ $json.body }}",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.whatsApp",
+      "typeVersion": 1.1,
+      "position": [1350, 0],
+      "id": "d5811725-6a6a-4ecd-875f-c510245bd134",
+      "name": "Send message",
+      "webhookId": "eb9906fd-7b4c-4153-9df9-4841b17f9e2d",
+      "credentials": {
+        "whatsAppApi": {
+          "id": "PoCO1hAPF60zHKp4",
+          "name": "WhatsApp account"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Code in JavaScript2": {
+      "main": [
+        [
+          {
+            "node": "Split In Batches",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split In Batches": {
+      "main": [
+        [
+          {
+            "node": "Send message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send message": {
+      "main": [
+        [
+          {
+            "node": "Split In Batches",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "2fa087f43d9ca9469ed17f7fbc2fee19ac46ec1a3c6032f9058c902f6bf5bd20"
+  }
+}

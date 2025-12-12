@@ -26,7 +26,7 @@ export default function PremiumPage() {
     compatibility,
   } = useTestStore();
 
-  const [email, setEmail] = useState<string>('');
+  const [whatsappNumber, setWhatsappNumber] = useState<string>('');
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
   const [errorMessage, setErrorMessage] = useState<string>('');
   const [snapLoaded, setSnapLoaded] = useState<boolean>(false);
@@ -50,8 +50,10 @@ export default function PremiumPage() {
   }, []);
 
   const handlePayment = async () => {
-    if (!email || !email.includes('@')) {
-      setErrorMessage('Mohon masukkan email yang valid');
+    // Basic validation for phone number (only numbers, min 10 digits)
+    const cleanNumber = whatsappNumber.replace(/\D/g, '');
+    if (!cleanNumber || cleanNumber.length < 10) {
+      setErrorMessage('Mohon masukkan nomor WhatsApp yang valid');
       return;
     }
 
@@ -59,10 +61,10 @@ export default function PremiumPage() {
     setErrorMessage('');
 
     try {
-      localStorage.setItem('payment_email', email);
+      localStorage.setItem('payment_whatsapp', cleanNumber);
 
       const paymentResponse = await midtransService.createTransaction(
-        email,
+        cleanNumber,
         person1Name,
         person2Name
       );
@@ -75,7 +77,7 @@ export default function PremiumPage() {
         const baseUrl = window.location.origin;
 
         window.snap.pay(paymentResponse.token, {
-          onSuccess: async function(result: any) {
+          onSuccess: async function (result: any) {
             try {
               const payload = {
                 ...webhookService.createPayload(
@@ -87,7 +89,7 @@ export default function PremiumPage() {
                   person2Profile!,
                   compatibility
                 ),
-                email
+                whatsapp: cleanNumber
               };
 
               await webhookService.sendToN8N(payload);
@@ -100,22 +102,22 @@ export default function PremiumPage() {
               status_code: result.status_code || '200',
               transaction_status: result.transaction_status || 'settlement',
               transaction_id: result.transaction_id || '',
-              email: email
+              whatsapp: cleanNumber
             });
             window.location.href = `${baseUrl}/payment/success?${params.toString()}`;
           },
 
-          onPending: function(result: any) {
+          onPending: function (result: any) {
             const params = new URLSearchParams({
               order_id: result.order_id || '',
               transaction_id: result.transaction_id || '',
               payment_type: result.payment_type || '',
-              email: email
+              whatsapp: cleanNumber
             });
             window.location.href = `${baseUrl}/payment/pending?${params.toString()}`;
           },
 
-          onError: function(result: any) {
+          onError: function (result: any) {
             const params = new URLSearchParams({
               order_id: result.order_id || '',
               transaction_id: result.transaction_id || '',
@@ -124,10 +126,10 @@ export default function PremiumPage() {
             window.location.href = `${baseUrl}/payment/error?${params.toString()}`;
           },
 
-          onClose: function() {
+          onClose: function () {
             setIsProcessing(false);
             setErrorMessage('Pembayaran dibatalkan');
-            localStorage.removeItem('payment_email');
+            localStorage.removeItem('payment_whatsapp');
           }
         });
       } else {
@@ -136,7 +138,7 @@ export default function PremiumPage() {
     } catch (error) {
       setErrorMessage(error instanceof Error ? error.message : 'Terjadi kesalahan tidak terduga');
       setIsProcessing(false);
-      localStorage.removeItem('payment_email');
+      localStorage.removeItem('payment_whatsapp');
     }
   };
 
@@ -152,7 +154,7 @@ export default function PremiumPage() {
     <div className="min-h-screen bg-bg-alt">
       <div className="max-w-3xl mx-auto p-4 py-8">
         <div className="bg-white rounded-3xl shadow-lg border border-border p-8 md:p-12">
-          
+
           {/* Header */}
           <div className="text-center mb-8">
             <div className="inline-flex items-center justify-center w-16 h-16 bg-primary-light rounded-2xl mb-4">
@@ -192,20 +194,23 @@ export default function PremiumPage() {
           <div className="bg-primary-light border-2 border-primary rounded-2xl p-6 mb-8 text-center">
             <p className="text-text-muted mb-2 font-medium">Harga Spesial</p>
             <p className="text-5xl font-bold text-primary mb-1">Rp 14.899</p>
-            <p className="text-sm text-text-muted">Sekali bayar • Hasil dikirim ke email</p>
+            <p className="text-sm text-text-muted">Sekali bayar • Hasil dikirim ke WhatsApp</p>
           </div>
 
           {/* Form */}
           <div className="space-y-4 mb-6">
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-2 ml-1">
-                Email untuk menerima hasil analisis
+                Nomor WhatsApp untuk menerima hasil analisis
               </label>
               <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="nama@email.com"
+                type="tel"
+                value={whatsappNumber}
+                onChange={(e) => {
+                  const val = e.target.value.replace(/\D/g, '');
+                  setWhatsappNumber(val);
+                }}
+                placeholder="08xxxxxxxxxx"
                 className="w-full px-4 py-3 border-2 border-border rounded-xl focus:border-primary focus:outline-none text-gray-900 transition-colors"
               />
             </div>

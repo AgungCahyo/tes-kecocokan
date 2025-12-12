@@ -3,7 +3,7 @@
 export interface MidtransPaymentRequest {
   orderId: string;
   amount: number;
-  customerEmail: string;
+  customerPhone: string;
   customerName: string;
   itemDetails: {
     id: string;
@@ -28,17 +28,17 @@ export class MidtransService {
   }
 
   async createTransaction(
-    email: string,
+    phoneNumber: string,
     person1Name: string,
     person2Name: string
   ): Promise<MidtransPaymentResponse> {
     try {
       const orderId = `PREMIUM-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-      
+
       const payload: MidtransPaymentRequest = {
         orderId,
-        amount: 14899, 
-        customerEmail: email,
+        amount: 14899,
+        customerPhone: phoneNumber,
         customerName: `${person1Name} & ${person2Name}`,
         itemDetails: [
           {
@@ -66,7 +66,7 @@ export class MidtransService {
       }
 
       const data = await response.json();
-      
+
       return {
         success: true,
         token: data.token,
@@ -103,7 +103,7 @@ export class MidtransService {
       }
 
       const data = await response.json();
-      
+
       return {
         success: true,
         status: data.transaction_status
@@ -120,10 +120,10 @@ export class MidtransService {
 
 // Configuration
 export const MIDTRANS_CONFIG = {
-  webhookUrl: process.env.NEXT_PUBLIC_MIDTRANS_WEBHOOK_URL ,
-  enabled: process.env.NEXT_PUBLIC_MIDTRANS_ENABLED ,
-  snapUrl: process.env.NEXT_PUBLIC_MIDTRANS_SNAP_URL ,
-  clientKey: process.env.NEXT_PUBLIC_MIDTRANS_CLIENT_KEY ,
+  webhookUrl: process.env.NEXT_PUBLIC_MIDTRANS_WEBHOOK_URL,
+  enabled: process.env.NEXT_PUBLIC_MIDTRANS_ENABLED,
+  snapUrl: process.env.NEXT_PUBLIC_MIDTRANS_SNAP_URL,
+  clientKey: process.env.NEXT_PUBLIC_MIDTRANS_CLIENT_KEY,
 };
 
 export const midtransService = new MidtransService(MIDTRANS_CONFIG.webhookUrl || "");

@@ -24,7 +24,7 @@ function PaymentSuccessContent() {
   const [errorMessage, setErrorMessage] = useState<string>('');
   const [orderDetails, setOrderDetails] = useState<{
     orderId: string;
-    email: string;
+    whatsapp: string;
     amount: string;
     transactionId: string;
   } | null>(null);
@@ -49,43 +49,43 @@ function PaymentSuccessContent() {
     try {
       // Validate payment success
       // valid status untuk sandbox & production
-const validStatusCodes = ['200', '201'];
-const validTransactionStatuses = ['settlement', 'capture', 'success'];
+      const validStatusCodes = ['200', '201'];
+      const validTransactionStatuses = ['settlement', 'capture', 'success'];
 
-if (!statusCode || !validStatusCodes.includes(statusCode) || !validTransactionStatuses.includes(transactionStatus || '')) {
-    if (transactionStatus === 'pending') {
-      setStatus('error');
-      setErrorMessage('Pembayaran masih dalam proses. Silakan tunggu konfirmasi.');
-      return;
-    }
-    throw new Error('Pembayaran tidak berhasil atau masih pending');
-}
+      if (!statusCode || !validStatusCodes.includes(statusCode) || !validTransactionStatuses.includes(transactionStatus || '')) {
+        if (transactionStatus === 'pending') {
+          setStatus('error');
+          setErrorMessage('Pembayaran masih dalam proses. Silakan tunggu konfirmasi.');
+          return;
+        }
+        throw new Error('Pembayaran tidak berhasil atau masih pending');
+      }
 
 
-      // Get email from localStorage or query param
-      const email = searchParams.get('email') || localStorage.getItem('payment_email') || '';
+      // Get whatsapp from localStorage or query param
+      const whatsapp = searchParams.get('whatsapp') || localStorage.getItem('payment_whatsapp') || '';
 
-      if (!email) {
-        throw new Error('Email tidak ditemukan');
+      if (!whatsapp) {
+        throw new Error('Nomor WhatsApp tidak ditemukan');
       }
 
       // Store order details
       setOrderDetails({
         orderId: orderId || 'N/A',
-        email: email,
+        whatsapp: whatsapp,
         amount: 'Rp 14.899',
         transactionId: transactionId || 'N/A'
       });
 
       // Send analysis request if we have all data
       if (person1Profile && person2Profile && compatibility) {
-        await sendAnalysisRequest(orderId || '', email);
+        await sendAnalysisRequest(orderId || '', whatsapp);
       }
 
       setStatus('success');
-      
-      // Clear payment email from localStorage
-      localStorage.removeItem('payment_email');
+
+      // Clear payment whatsapp from localStorage
+      localStorage.removeItem('payment_whatsapp');
     } catch (error) {
       console.error('Payment verification error:', error);
       setStatus('error');
@@ -93,7 +93,7 @@ if (!statusCode || !validStatusCodes.includes(statusCode) || !validTransactionSt
     }
   };
 
-  const sendAnalysisRequest = async (orderId: string, email: string) => {
+  const sendAnalysisRequest = async (orderId: string, whatsapp: string) => {
     if (!person1Profile || !person2Profile || !compatibility) return;
 
     try {
@@ -109,7 +109,8 @@ if (!statusCode || !validStatusCodes.includes(statusCode) || !validTransactionSt
 
       const fullPayload = {
         ...payload,
-        email,
+        ...payload,
+        whatsapp,
         orderId,
         requestType: 'premium_analysis',
         paymentStatus: 'success'
@@ -185,115 +186,115 @@ if (!statusCode || !validStatusCodes.includes(statusCode) || !validTransactionSt
 
   // Success state
   return (
-  <div className="min-h-screen flex items-center justify-center bg-bg-alt p-4">
-    <div className="max-w-2xl w-full bg-white rounded-3xl shadow-lg border border-border p-8 md:p-12">
-      <div className="text-center mb-8">
-        <div className="inline-flex items-center justify-center w-20 h-20 bg-green-50 rounded-2xl mb-6">
-          <CheckCircle className="w-12 h-12 text-green-500" strokeWidth={2.5} />
+    <div className="min-h-screen flex items-center justify-center bg-bg-alt p-4">
+      <div className="max-w-2xl w-full bg-white rounded-3xl shadow-lg border border-border p-8 md:p-12">
+        <div className="text-center mb-8">
+          <div className="inline-flex items-center justify-center w-20 h-20 bg-green-50 rounded-2xl mb-6">
+            <CheckCircle className="w-12 h-12 text-green-500" strokeWidth={2.5} />
+          </div>
+          <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-2">
+            Pembayaran Berhasil!
+          </h1>
+          <p className="text-lg text-text-muted">
+            Terima kasih atas pembelian Anda
+          </p>
         </div>
-        <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-2">
-          Pembayaran Berhasil!
-        </h1>
-        <p className="text-lg text-text-muted">
-          Terima kasih atas pembelian Anda
-        </p>
-      </div>
 
-      {/* Order Details */}
-      {orderDetails && (
-        <div className="bg-secondary border border-border rounded-2xl p-6 mb-8">
-          <h2 className="text-xl font-bold text-gray-900 mb-4">
-            Detail Pesanan
-          </h2>
-          <div className="space-y-2 text-gray-700">
-            <div className="flex justify-between py-2 border-b border-border">
-              <span className="font-medium">Order ID:</span>
-              <span className="text-right">{orderDetails.orderId}</span>
+        {/* Order Details */}
+        {orderDetails && (
+          <div className="bg-secondary border border-border rounded-2xl p-6 mb-8">
+            <h2 className="text-xl font-bold text-gray-900 mb-4">
+              Detail Pesanan
+            </h2>
+            <div className="space-y-2 text-gray-700">
+              <div className="flex justify-between py-2 border-b border-border">
+                <span className="font-medium">Order ID:</span>
+                <span className="text-right">{orderDetails.orderId}</span>
+              </div>
+              <div className="flex justify-between py-2 border-b border-border">
+                <span className="font-medium">Transaction ID:</span>
+                <span className="text-right break-all text-sm">{orderDetails.transactionId}</span>
+              </div>
+              <div className="flex justify-between py-2 border-b border-border">
+                <span className="font-medium">WhatsApp:</span>
+                <span className="text-right break-all text-sm">{orderDetails.whatsapp}</span>
+              </div>
+              <div className="flex justify-between py-2">
+                <span className="font-medium">Total:</span>
+                <span className="text-right font-bold text-primary">{orderDetails.amount}</span>
+              </div>
             </div>
-            <div className="flex justify-between py-2 border-b border-border">
-              <span className="font-medium">Transaction ID:</span>
-              <span className="text-right break-all text-sm">{orderDetails.transactionId}</span>
-            </div>
-            <div className="flex justify-between py-2 border-b border-border">
-              <span className="font-medium">Email:</span>
-              <span className="text-right break-all text-sm">{orderDetails.email}</span>
-            </div>
-            <div className="flex justify-between py-2">
-              <span className="font-medium">Total:</span>
-              <span className="text-right font-bold text-primary">{orderDetails.amount}</span>
+          </div>
+        )}
+
+        {/* What's Next */}
+        <div className="bg-blue-50 border-2 border-blue-200 rounded-2xl p-6 mb-8">
+          <div className="flex items-start gap-4">
+            <Mail className="w-8 h-8 text-blue-500 flex-shrink-0 mt-1" strokeWidth={2.5} />
+            <div>
+              <h3 className="text-lg font-bold text-gray-900 mb-2">
+                Langkah Selanjutnya
+              </h3>
+              <ul className="space-y-2 text-sm text-gray-700">
+                <li className="flex items-start gap-2">
+                  <span className="text-blue-500 font-bold">1.</span>
+                  <span>Analisis premium sedang diproses oleh AI kami</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-blue-500 font-bold">2.</span>
+                  <span>Hasil akan dikirim ke WhatsApp dalam 5-10 menit</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-blue-500 font-bold">3.</span>
+                  <span>Cek pesan WhatsApp dari bot kami</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-blue-500 font-bold">4.</span>
+                  <span>Analisis dikirim dalam format pesan chat yang mudah dibaca</span>
+                </li>
+              </ul>
             </div>
           </div>
         </div>
-      )}
 
-      {/* What's Next */}
-      <div className="bg-blue-50 border-2 border-blue-200 rounded-2xl p-6 mb-8">
-        <div className="flex items-start gap-4">
-          <Mail className="w-8 h-8 text-blue-500 flex-shrink-0 mt-1" strokeWidth={2.5} />
-          <div>
-            <h3 className="text-lg font-bold text-gray-900 mb-2">
-              Langkah Selanjutnya
-            </h3>
-            <ul className="space-y-2 text-sm text-gray-700">
-              <li className="flex items-start gap-2">
-                <span className="text-blue-500 font-bold">1.</span>
-                <span>Analisis premium sedang diproses oleh AI kami</span>
-              </li>
-              <li className="flex items-start gap-2">
-                <span className="text-blue-500 font-bold">2.</span>
-                <span>Hasil akan dikirim ke email dalam 5-10 menit</span>
-              </li>
-              <li className="flex items-start gap-2">
-                <span className="text-blue-500 font-bold">3.</span>
-                <span>Cek folder inbox atau spam untuk email dari kami</span>
-              </li>
-              <li className="flex items-start gap-2">
-                <span className="text-blue-500 font-bold">4.</span>
-                <span>Analisis dikirim dalam format PDF yang mudah dibaca</span>
-              </li>
-            </ul>
+        {/* Tips */}
+        <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4 mb-8">
+          <div className="flex items-start gap-3">
+            <FileText className="w-5 h-5 text-yellow-600 flex-shrink-0 mt-0.5" strokeWidth={2.5} />
+            <div className="text-sm text-gray-700">
+              <p className="font-semibold mb-1">💡 Tips:</p>
+              <p>Jika pesan tidak masuk dalam 15 menit, hubungi support dengan Order ID di atas.</p>
+            </div>
           </div>
         </div>
-      </div>
 
-      {/* Tips */}
-      <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4 mb-8">
-        <div className="flex items-start gap-3">
-          <FileText className="w-5 h-5 text-yellow-600 flex-shrink-0 mt-0.5" strokeWidth={2.5} />
-          <div className="text-sm text-gray-700">
-            <p className="font-semibold mb-1">💡 Tips:</p>
-            <p>Jika email tidak masuk dalam 15 menit, cek folder spam atau hubungi support dengan Order ID di atas.</p>
-          </div>
+        {/* Action Buttons */}
+        <div className="space-y-3">
+          <button
+            onClick={handleBackToResult}
+            className="w-full py-3 bg-primary hover:bg-primary-hover text-white font-semibold rounded-xl transition-all duration-200 flex items-center justify-center gap-2 shadow-sm"
+          >
+            Lihat Hasil Tes Gratis
+            <ArrowRight className="w-5 h-5" strokeWidth={2.5} />
+          </button>
+
+          <button
+            onClick={handleBackToHome}
+            className="w-full py-3 bg-secondary hover:bg-secondary-dark text-gray-800 font-semibold rounded-xl transition-all duration-200"
+          >
+            Kembali ke Beranda
+          </button>
         </div>
-      </div>
 
-      {/* Action Buttons */}
-      <div className="space-y-3">
-        <button
-          onClick={handleBackToResult}
-          className="w-full py-3 bg-primary hover:bg-primary-hover text-white font-semibold rounded-xl transition-all duration-200 flex items-center justify-center gap-2 shadow-sm"
-        >
-          Lihat Hasil Tes Gratis
-          <ArrowRight className="w-5 h-5" strokeWidth={2.5} />
-        </button>
-        
-        <button
-          onClick={handleBackToHome}
-          className="w-full py-3 bg-secondary hover:bg-secondary-dark text-gray-800 font-semibold rounded-xl transition-all duration-200"
-        >
-          Kembali ke Beranda
-        </button>
-      </div>
-
-      {/* Footer */}
-      <div className="mt-8 pt-6 border-t border-border text-center">
-        <p className="text-xs text-text-muted">
-          Butuh bantuan? Hubungi support@personalitytest.com
-        </p>
+        {/* Footer */}
+        <div className="mt-8 pt-6 border-t border-border text-center">
+          <p className="text-xs text-text-muted">
+            Butuh bantuan? Hubungi support@personalitytest.com
+          </p>
+        </div>
       </div>
     </div>
-  </div>
-);
+  );
 }
 
 export default function PaymentSuccessPage() {
