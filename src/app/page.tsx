@@ -25,10 +25,10 @@ export default function HomePage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50">
-      <div className="max-w-2xl w-full bg-white rounded-3xl shadow-2xl p-8 md:p-12">
+    <div className="min-h-screen flex items-center justify-center p-4 bg-bg-alt">
+      <div className="max-w-2xl w-full bg-secondary rounded-3xl shadow-2xl p-8 md:p-12">
         <div className="text-center">
-          <Heart className="w-20 h-20 mx-auto mb-6 text-pink-500" />
+          <Heart className="w-20 h-20 mx-auto mb-6 text-primary" />
           <h1 className="text-4xl md:text-5xl font-bold text-gray-800 mb-4">
             Tes Kecocokan Kepribadian
           </h1>
@@ -56,7 +56,7 @@ export default function HomePage() {
           <button
             onClick={handleStart}
             disabled={!localPerson1 || !localPerson2}
-            className="w-full py-4 bg-gradient-to-r from-purple-500 to-pink-500 text-white text-lg font-semibold rounded-xl hover:from-purple-600 hover:to-pink-600 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            className="w-full py-4 bg-primary text-white text-lg font-semibold rounded-xl hover:from-purple-600 hover:to-pink-600 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
           >
             Mulai Tes <ArrowRight className="w-6 h-6" />
           </button>

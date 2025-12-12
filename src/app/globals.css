@@ -3,11 +3,20 @@
 :root {
   --background: #ffffff;
   --foreground: #171717;
+
+  --primary: #DD3A44;
+  --secondary: #EFE6DE;
+  --bg-alt: #F7F3F0; /* warna baru */
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+
+  --color-primary: var(--primary);
+  --color-secondary: var(--secondary);
+  --color-bg-alt: var(--bg-alt);
+
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
@@ -16,6 +25,9 @@
   :root {
     --background: #0a0a0a;
     --foreground: #ededed;
+
+    /* Kalau mau versi dark-nya */
+    /* --bg-alt: #1a1a1a; */
   }
 }
 
