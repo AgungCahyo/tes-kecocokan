@@ -27,27 +27,34 @@ export default function Person2Page() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 bg-bg-alt">
-      <div className="max-w-2xl w-full bg-white rounded-3xl shadow-lg border border-border p-8 md:p-12">
-        <div className="text-center">
-          <div className="inline-flex items-center justify-center w-20 h-20 bg-primary-light rounded-2xl mb-6">
-            <Users className="w-10 h-10 text-primary" strokeWidth={2.5} />
-          </div>
-          
-          <h1 className="text-4xl font-bold text-gray-900 mb-3">
-            Giliran {person2Name}!
-          </h1>
-          <p className="text-lg text-text-muted mb-8 max-w-md mx-auto">
-            {person1Name} sudah selesai mengisi tes. Sekarang giliran {person2Name} untuk menjawab pertanyaan yang sama.
-          </p>
+    <div className="min-h-screen flex items-center justify-center p-4">
+      <div className="max-w-xl w-full">
+        {/* Main Card */}
+        <div className="glass-panel rounded-3xl p-8 md:p-12 relative overflow-hidden">
 
-          <button
-            onClick={handleStart}
-            className="w-full py-4 bg-primary hover:bg-primary-hover text-white text-lg font-semibold rounded-xl transition-all duration-200 flex items-center justify-center gap-2 shadow-sm"
-          >
-            Mulai Tes {person2Name} 
-            <ArrowRight className="w-6 h-6" strokeWidth={2.5} />
-          </button>
+          {/* Decorative Elements */}
+          <div className="absolute -top-20 -left-20 w-64 h-64 bg-primary/5 rounded-full blur-3xl" />
+
+          <div className="text-center relative z-10">
+            <div className="inline-flex items-center justify-center w-20 h-20 bg-primary-light rounded-2xl mb-6 shadow-sm transform hover:rotate-3 transition-transform duration-300">
+              <Users className="w-10 h-10 text-primary" strokeWidth={2.5} />
+            </div>
+
+            <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-3">
+              Giliran {person2Name}!
+            </h1>
+            <p className="text-lg text-text-muted mb-8 max-w-sm mx-auto leading-relaxed">
+              <span className="font-semibold text-primary">{person1Name}</span> sudah selesai. Sekarang saatnya melihat sudut pandang kamu.
+            </p>
+
+            <button
+              onClick={handleStart}
+              className="w-full py-4 btn-primary text-lg shadow-xl shadow-primary/20"
+            >
+              Mulai Tes {person2Name}
+              <ArrowRight className="w-6 h-6" strokeWidth={2.5} />
+            </button>
+          </div>
         </div>
       </div>
     </div>

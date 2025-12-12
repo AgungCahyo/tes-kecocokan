@@ -1,19 +1,28 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Base - Slate 50/900 */
+  --background: #F8FAFC; 
+  --foreground: #0F172A;
 
-  --primary: #DD3A44;
-  --primary-hover: #c32e38;
-  --primary-light: #fef2f3;
+  /* Primary - Rose 600 */
+  --primary: #E11D48;
+  --primary-hover: #BE123C;
+  --primary-light: #FFF1F2; /* Rose 50 */
+  --primary-ring: rgba(225, 29, 72, 0.1);
   
-  --secondary: #EFE6DE;
-  --secondary-dark: #e0d5cb;
+  /* Secondary - Slate 100 */
+  --secondary: #F1F5F9;
+  --secondary-dark: #E2E8F0;
   
-  --bg-alt: #F7F3F0;
-  --text-muted: #6B7280;
-  --border: #E5E7EB;
+  /* UI Elements */
+  --card-bg: #FFFFFF;
+  --border: #E2E8F0; /* Slate 200 */
+  --text-muted: #64748B; /* Slate 500 */
+  
+  /* Gradients */
+  --gradient-start: #FFF1F2;
+  --gradient-end: #F8FAFC;
 }
 
 @theme inline {
@@ -23,55 +32,70 @@
   --color-primary: var(--primary);
   --color-primary-hover: var(--primary-hover);
   --color-primary-light: var(--primary-light);
+  --color-primary-ring: var(--primary-ring);
   
   --color-secondary: var(--secondary);
   --color-secondary-dark: var(--secondary-dark);
   
-  --color-bg-alt: var(--bg-alt);
+  --color-card-bg: var(--card-bg);
   --color-text-muted: var(--text-muted);
   --color-border: var(--border);
 
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+  
+  --shadow-soft: 0 4px 20px -2px rgba(0, 0, 0, 0.05);
+  --shadow-hover: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-    --bg-alt: #1a1a1a;
-    --text-muted: #9CA3AF;
-    --border: #374151;
+    --background: #0F172A;
+    --foreground: #E2E8F0;
+    
+    --primary: #F43F5E; /* Rose 500 */
+    --primary-hover: #E11D48;
+    --primary-light: #331219;
+    
+    --secondary: #1E293B;
+    --secondary-dark: #334155;
+    
+    --card-bg: #1E293B;
+    --border: #334155;
+    --text-muted: #94A3B8;
   }
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans), Arial, sans-serif;
+  background-image: linear-gradient(to bottom right, var(--gradient-start), var(--gradient-end));
+  min-height: 100vh;
 }
 
 /* Custom Utilities */
+.glass-panel {
+  @apply bg-card-bg/80 backdrop-blur-xl border border-border shadow-soft;
+}
+
+.input-modern {
+  @apply w-full px-5 py-4 bg-white dark:bg-slate-900 border-2 border-border rounded-xl 
+         focus:border-primary focus:ring-4 focus:ring-primary-ring focus:outline-none 
+         text-foreground placeholder:text-text-muted/70 transition-all duration-200;
+}
+
 .btn-primary {
-  @apply bg-primary hover:bg-primary-hover text-white font-semibold transition-all duration-200;
+  @apply bg-primary hover:bg-primary-hover text-white font-semibold rounded-xl 
+         shadow-lg shadow-primary/20 hover:shadow-primary/30 active:scale-[0.98] 
+         transition-all duration-200 flex items-center justify-center gap-2;
 }
 
 .btn-secondary {
-  @apply bg-secondary hover:bg-secondary-dark text-gray-800 font-semibold transition-all duration-200;
+  @apply bg-secondary hover:bg-secondary-dark text-foreground font-semibold rounded-xl
+         transition-all duration-200 flex items-center justify-center gap-2;
 }
 
-.card {
-  @apply bg-white rounded-2xl shadow-sm border border-border;
-}
-
-.badge {
-  @apply inline-flex items-center px-3 py-1 rounded-full text-sm font-medium;
-}
-
-.badge-primary {
-  @apply bg-primary-light text-primary;
-}
-
-.badge-secondary {
-  @apply bg-secondary text-gray-700;
+.card-hover {
+  @apply transition-all duration-300 hover:shadow-hover hover:-translate-y-1;
 }
