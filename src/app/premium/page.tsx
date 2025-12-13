@@ -298,13 +298,9 @@ export default function PremiumPage() {
                     Menunggu verifikasi... ({pollCount}/30)
                   </div>
                 ) : (
-                  <button
-                    onClick={() => setIsWaVerified(true)}
-                    className="w-full py-3 bg-card-bg border-2 border-green-500 text-green-600 hover:bg-green-50 font-semibold rounded-xl transition-all flex items-center justify-center gap-2"
-                  >
-                    <Check className="w-5 h-5" />
-                    2. Saya Sudah Kirim Pesan
-                  </button>
+                  <p className="text-sm text-gray-600 text-center py-2">
+                    Klik tombol di atas, kirim START, lalu tunggu verifikasi otomatis
+                  </p>
                 )}
 
                 <p className="text-xs text-blue-600 mt-2 text-center">
