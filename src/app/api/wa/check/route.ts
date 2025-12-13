@@ -1,4 +1,4 @@
-// src/app/api/wa/check/route.ts
+// src/app/api/wa/check/route.ts - FIXED VERSION
 import { NextRequest, NextResponse } from 'next/server';
 import { isVerified, markVerified } from '@/lib/waVerificationStore';
 
@@ -7,15 +7,45 @@ export async function GET(req: NextRequest) {
         const phone = req.nextUrl.searchParams.get('phone');
 
         if (!phone) {
-            return NextResponse.json({ verified: false }, { status: 400 });
+            return NextResponse.json(
+                { verified: false, error: 'Phone number required' }, 
+                { status: 400 }
+            );
         }
 
-        const verified = await isVerified(phone);
-        return NextResponse.json({ verified });
+        // Normalize phone number
+        const cleanPhone = phone.replace(/\D/g, '');
+        
+        if (cleanPhone.length < 10) {
+            return NextResponse.json(
+                { verified: false, error: 'Invalid phone number' }, 
+                { status: 400 }
+            );
+        }
+
+        console.log(`[WA Check] Checking verification for: ${cleanPhone}`);
+        
+        const verified = await isVerified(cleanPhone);
+        
+        console.log(`[WA Check] Result for ${cleanPhone}: ${verified}`);
+
+        // IMPORTANT: Always return JSON with verified field
+        return NextResponse.json(
+            { verified },
+            { 
+                status: 200,
+                headers: {
+                    'Cache-Control': 'no-store, no-cache, must-revalidate',
+                }
+            }
+        );
 
     } catch (error) {
-        console.error('WA check error:', error);
-        return NextResponse.json({ verified: false }, { status: 500 });
+        console.error('[WA Check] Error:', error);
+        return NextResponse.json(
+            { verified: false, error: 'Server error' }, 
+            { status: 500 }
+        );
     }
 }
 
@@ -24,18 +54,29 @@ export async function POST(req: NextRequest) {
         const { phone, action } = await req.json();
 
         if (!phone) {
-            return NextResponse.json({ success: false }, { status: 400 });
+            return NextResponse.json(
+                { success: false, error: 'Phone number required' }, 
+                { status: 400 }
+            );
         }
 
+        const cleanPhone = phone.replace(/\D/g, '');
+
         if (action === 'mark') {
-            const success = await markVerified(phone);
+            console.log(`[WA Check] Marking as verified: ${cleanPhone}`);
+            const success = await markVerified(cleanPhone);
             return NextResponse.json({ success });
         }
 
-        const verified = await isVerified(phone);
+        // Default: check verification
+        const verified = await isVerified(cleanPhone);
         return NextResponse.json({ verified });
 
     } catch (error) {
-        return NextResponse.json({ verified: false }, { status: 500 });
+        console.error('[WA Check] POST Error:', error);
+        return NextResponse.json(
+            { verified: false, error: 'Server error' }, 
+            { status: 500 }
+        );
     }
 }

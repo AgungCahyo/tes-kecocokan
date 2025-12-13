@@ -1,62 +1,118 @@
-// src/lib/waVerificationStore.ts
-// Redis-based store for WA verification (works across serverless instances)
+// src/lib/waVerificationStore.ts - FIXED VERSION
 import Redis from 'ioredis';
 
-// Create Redis client (use REDIS_URL from env)
-const getRedisClient = () => {
-    const redisUrl = process.env.REDIS_URL;
-    if (!redisUrl) {
-        console.warn('REDIS_URL not set, verification will not persist');
-        return null;
-    }
-    return new Redis(redisUrl);
-};
-
+// Singleton Redis client
 let redis: Redis | null = null;
 
-const getRedis = () => {
-    if (!redis) {
-        redis = getRedisClient();
+const getRedisClient = (): Redis | null => {
+    // Return existing client if available
+    if (redis) {
+        return redis;
     }
-    return redis;
+
+    const redisUrl = process.env.REDIS_URL;
+    
+    if (!redisUrl) {
+        console.error('⚠️ REDIS_URL not set in environment variables');
+        console.error('WA verification will NOT work without Redis!');
+        return null;
+    }
+
+    try {
+        console.log('📡 Connecting to Redis...');
+        redis = new Redis(redisUrl, {
+            maxRetriesPerRequest: 3,
+            enableReadyCheck: true,
+            lazyConnect: true,
+        });
+
+        redis.on('connect', () => {
+            console.log('✅ Redis connected successfully');
+        });
+
+        redis.on('error', (err) => {
+            console.error('❌ Redis connection error:', err);
+        });
+
+        // Try to connect
+        redis.connect().catch(err => {
+            console.error('❌ Failed to connect to Redis:', err);
+            redis = null;
+        });
+
+        return redis;
+    } catch (error) {
+        console.error('❌ Error creating Redis client:', error);
+        return null;
+    }
 };
 
 // Key prefix for WA verification
 const KEY_PREFIX = 'wa_verified:';
-const EXPIRY_SECONDS = 300; // 5 minutes
+const EXPIRY_SECONDS = 600; // 10 minutes (increased from 5)
 
 export const markVerified = async (phone: string): Promise<boolean> => {
     const normalizedPhone = phone.replace(/\D/g, '');
-    const client = getRedis();
+    const client = getRedisClient();
 
     if (!client) {
-        console.error('Redis not available');
+        console.error('❌ [markVerified] Redis not available');
         return false;
     }
 
     try {
-        await client.set(`${KEY_PREFIX}${normalizedPhone}`, 'true', 'EX', EXPIRY_SECONDS);
-        console.log(`WA Verified: ${normalizedPhone}`);
+        const key = `${KEY_PREFIX}${normalizedPhone}`;
+        await client.set(key, 'true', 'EX', EXPIRY_SECONDS);
+        console.log(`✅ [markVerified] WA Verified: ${normalizedPhone} (expires in ${EXPIRY_SECONDS}s)`);
+        
+        // Verify it was set correctly
+        const check = await client.get(key);
+        console.log(`🔍 [markVerified] Verification check: ${check}`);
+        
         return true;
     } catch (error) {
-        console.error('Redis markVerified error:', error);
+        console.error('❌ [markVerified] Redis error:', error);
         return false;
     }
 };
 
 export const isVerified = async (phone: string): Promise<boolean> => {
     const normalizedPhone = phone.replace(/\D/g, '');
-    const client = getRedis();
+    const client = getRedisClient();
 
+    if (!client) {
+        console.error('❌ [isVerified] Redis not available');
+        return false;
+    }
+
+    try {
+        const key = `${KEY_PREFIX}${normalizedPhone}`;
+        const result = await client.get(key);
+        const verified = result === 'true';
+        
+        console.log(`🔍 [isVerified] Checking ${normalizedPhone}: ${verified ? '✅ VERIFIED' : '❌ NOT VERIFIED'}`);
+        
+        return verified;
+    } catch (error) {
+        console.error('❌ [isVerified] Redis error:', error);
+        return false;
+    }
+};
+
+// Helper function to test Redis connection
+export const testRedisConnection = async (): Promise<boolean> => {
+    const client = getRedisClient();
+    
     if (!client) {
         return false;
     }
 
     try {
-        const result = await client.get(`${KEY_PREFIX}${normalizedPhone}`);
-        return result === 'true';
+        await client.ping();
+        console.log('✅ Redis PING successful');
+        return true;
     } catch (error) {
-        console.error('Redis isVerified error:', error);
+        console.error('❌ Redis PING failed:', error);
         return false;
     }
 };
