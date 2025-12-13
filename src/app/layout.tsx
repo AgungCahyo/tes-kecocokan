@@ -16,7 +16,7 @@ const geistMono = Geist_Mono({
 
 // SEO Metadata yang Komprehensif
 export const metadata: Metadata = {
-  metadataBase: new URL('https://personality-test.up.railway.app'),
+  metadataBase: new URL('https://tes-kecocokan.vercel.app'),
   // Basic Meta
   title: {
     default: "Tes Kecocokan Kepribadian - Analisis Hubungan AI",
@@ -49,7 +49,7 @@ export const metadata: Metadata = {
   openGraph: {
     type: "website",
     locale: "id_ID",
-    url: "https://personality-test.up.railway.app",
+    url: "https://tes-kecocokan.vercel.app",
     siteName: "Tes Kecocokan Kepribadian",
     title: "Tes Kecocokan Kepribadian - Analisis Hubungan dengan AI",
     description: "Tes MBTI lengkap untuk mengukur kecocokan hubungan. Dapatkan analisis mendalam tentang komunikasi, nilai, dan strategi membangun hubungan yang harmonis.",
@@ -167,8 +167,8 @@ export default function RootLayout({
               "@context": "https://schema.org",
               "@type": "Organization",
               "name": "Tes Kecocokan Kepribadian",
-              "url": "https://personalitytest.id",
-              "logo": "https://personalitytest.id/logo.png",
+              "url": "https://tes-kecocokan.vercel.app",
+              "logo": "https://tes-kecocokan.vercel.app/logo.png",
               "description": "Platform tes kepribadian dan analisis kecocokan hubungan berbasis AI",
               "sameAs": [
                 "https://facebook.com/personalitytest",
@@ -187,7 +187,7 @@ export default function RootLayout({
               "@context": "https://schema.org",
               "@type": "WebApplication",
               "name": "Tes Kecocokan Kepribadian",
-              "url": "https://personalitytest.id",
+              "url": "https://tes-kecocokan.vercel.app",
               "description": "Tes MBTI dan analisis kecocokan hubungan dengan AI",
               "applicationCategory": "LifestyleApplication",
               "operatingSystem": "Any",
@@ -215,10 +215,10 @@ export default function RootLayout({
               "@context": "https://schema.org",
               "@type": "WebSite",
               "name": "Tes Kecocokan Kepribadian",
-              "url": "https://personalitytest.id",
+              "url": "https://tes-kecocokan.vercel.app",
               "potentialAction": {
                 "@type": "SearchAction",
-                "target": "https://personalitytest.id/search?q={search_term_string}",
+                "target": "https://tes-kecocokan.vercel.app/search?q={search_term_string}",
                 "query-input": "required name=search_term_string"
               }
             })
