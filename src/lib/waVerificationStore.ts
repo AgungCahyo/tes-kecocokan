@@ -11,7 +11,7 @@ const getRedisClient = (): Redis | null => {
     }
 
     const redisUrl = process.env.REDIS_URL;
-    
+
     if (!redisUrl) {
         console.error('⚠️ REDIS_URL not set in environment variables');
         console.error('WA verification will NOT work without Redis!');
@@ -49,10 +49,28 @@ const getRedisClient = (): Redis | null => {
 
 // Key prefix for WA verification
 const KEY_PREFIX = 'wa_verified:';
-const EXPIRY_SECONDS = 600; // 10 minutes (increased from 5)
+const EXPIRY_SECONDS = 600; // 10 minutes
+
+// Normalize phone number to 62xxx format
+// Handles both 08xxx (local) and 62xxx (international) formats
+const normalizePhone = (phone: string): string => {
+    let clean = phone.replace(/\D/g, '');
+
+    // Remove leading 0 and add 62 prefix
+    if (clean.startsWith('0')) {
+        clean = '62' + clean.substring(1);
+    }
+    // If doesn't start with 62, add it
+    else if (!clean.startsWith('62')) {
+        clean = '62' + clean;
+    }
+
+    console.log(`📱 [normalizePhone] ${phone} → ${clean}`);
+    return clean;
+};
 
 export const markVerified = async (phone: string): Promise<boolean> => {
-    const normalizedPhone = phone.replace(/\D/g, '');
+    const normalizedPhone = normalizePhone(phone);
     const client = getRedisClient();
 
     if (!client) {
@@ -64,11 +82,11 @@ export const markVerified = async (phone: string): Promise<boolean> => {
         const key = `${KEY_PREFIX}${normalizedPhone}`;
         await client.set(key, 'true', 'EX', EXPIRY_SECONDS);
         console.log(`✅ [markVerified] WA Verified: ${normalizedPhone} (expires in ${EXPIRY_SECONDS}s)`);
-        
+
         // Verify it was set correctly
         const check = await client.get(key);
         console.log(`🔍 [markVerified] Verification check: ${check}`);
-        
+
         return true;
     } catch (error) {
         console.error('❌ [markVerified] Redis error:', error);
@@ -77,7 +95,7 @@ export const markVerified = async (phone: string): Promise<boolean> => {
 };
 
 export const isVerified = async (phone: string): Promise<boolean> => {
-    const normalizedPhone = phone.replace(/\D/g, '');
+    const normalizedPhone = normalizePhone(phone);
     const client = getRedisClient();
 
     if (!client) {
@@ -89,9 +107,9 @@ export const isVerified = async (phone: string): Promise<boolean> => {
         const key = `${KEY_PREFIX}${normalizedPhone}`;
         const result = await client.get(key);
         const verified = result === 'true';
-        
+
         console.log(`🔍 [isVerified] Checking ${normalizedPhone}: ${verified ? '✅ VERIFIED' : '❌ NOT VERIFIED'}`);
-        
+
         return verified;
     } catch (error) {
         console.error('❌ [isVerified] Redis error:', error);
@@ -102,7 +120,7 @@ export const isVerified = async (phone: string): Promise<boolean> => {
 // Helper function to test Redis connection
 export const testRedisConnection = async (): Promise<boolean> => {
     const client = getRedisClient();
-    
+
     if (!client) {
         return false;
     }
