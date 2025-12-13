@@ -29,32 +29,86 @@ function PaymentSuccessContent() {
     transactionId: string;
   } | null>(null);
 
-  const isProcessed = useRef(false);
-
   useEffect(() => {
-    if (isProcessed.current) return;
-
     // Get payment details from URL params
     const orderId = searchParams.get('order_id');
     const statusCode = searchParams.get('status_code');
     const transactionStatus = searchParams.get('transaction_status');
     const transactionId = searchParams.get('transaction_id');
 
-    // Only process if we have an orderId to avoid blocking legit retry/refresh if params are missing initially (though unlikely in this flow)
-    // But for the specific "double run" issue where params ARE present, we lock it.
-    // To be safe against "empty params" causing a lock, we check for orderId or simply valid params presence?
-    // Actually, let's just lock it. If valid params are missing, it errors anyway.
-    isProcessed.current = true;
+    // Idempotency Check: Prevent double processing on reload
+    // We use sessionStorage so it persists during the session (reloads) but clears on browser close
+    if (orderId) {
+      const storageKey = `payment_processed_${orderId}`;
+      if (typeof window !== 'undefined' && sessionStorage.getItem(storageKey)) {
+        // If already processed, just restore state or do nothing (user sees success UI)
+        // We might want to ensure we show "Success" state if it was successful before?
+        // For now, let's just assume if it's in storage, we don't trigger backend.
+        // But we DO need to show the UI. 
+        // Actually, if we skip 'verifyAndProcessPayment', the state remains 'verifying'.
+        // We should probably just call verifying but NOT send the webhook?
+        // Or simpler: The previous logic sets state to 'success' at the end.
+        // If we skip, we must manually set 'success' and 'orderDetails' if possible.
+        // However, retrieving order details from LS might be complex if we didn't save them.
 
-    // Verify payment and send analysis request
-    verifyAndProcessPayment(orderId, statusCode, transactionStatus, transactionId);
+        // BETTER APPROACH:
+        // Let verifyAndProcessPayment run, but inside it, check storage before sending webhook.
+        // But verifyAndProcessPayment sets the UI state.
+
+        // Let's modify verifyAndProcessPayment instead? 
+        // No, the instruction was to modify the useEffect or the check.
+
+        // Let's keep it simple:
+        // If processed, we still probably want to show the "Success" UI.
+        // The current code fetches data from params.
+        // If we block the WHOLE function, we get stuck on "Verifying...".
+
+        // So, we should ALLOW UI rendering but BLOCK the webhook.
+        // The webhook is sent in `sendAnalysisRequest`.
+
+        // Let's change the plan slightly to be more robust:
+        // Pass a flag to verifyAndProcessPayment?
+        // Or check storage inside logic?
+
+        // Let's stick to the plan: "Check if key exists... If no, set key and proceed."
+        // Wait, if I block `verifyAndProcessPayment`, the UI dies.
+        // I need to prevent the *expensive* part (backend trigger).
+
+        // Let's proceed with calling the function, but inside the function verify valid status.
+        // Actually `verifyAndProcessPayment` does:
+        // 1. Validate status
+        // 2. Get whatsapp
+        // 3. Set UI status 'success'
+        // 4. `sendAnalysisRequest` (THIS is the duplicate trigger)
+
+        // So I should wrap `sendAnalysisRequest` call or check inside it.
+
+        // But the previous `useRef` block prevented the WHOLE `verifyAndProcessPayment`.
+        // If I restore THAT behavior with sessionStorage, the user who reloads checks "Verifying..." forever.
+        // That is BAD UX. 
+
+        // So `useRef` was actually "wrong" for reloads too if it blocked UI?
+        // Ah, `useRef` is false on reload, so code runs again.
+
+        // If I use `sessionStorage`, I block it permenantly for that session.
+        // So I MUST parse params and show success, but NOT send webhook.
+
+        // If processed, we still want to show the "Success" UI (so we call the function),
+        // but we MUST prevent the expensive webhook trigger.
+        verifyAndProcessPayment(orderId, statusCode, transactionStatus, transactionId, true);
+        return;
+      }
+    }
+
+    verifyAndProcessPayment(orderId, statusCode, transactionStatus, transactionId, false);
   }, [searchParams]);
 
   const verifyAndProcessPayment = async (
     orderId: string | null,
     statusCode: string | null,
     transactionStatus: string | null,
-    transactionId: string | null
+    transactionId: string | null,
+    skipWebhook: boolean = false
   ) => {
     try {
       // Validate payment success
@@ -88,11 +142,16 @@ function PaymentSuccessContent() {
       });
 
       // Send analysis request if we have all data
-      if (person1Profile && person2Profile && compatibility) {
+      if (person1Profile && person2Profile && compatibility && !skipWebhook) {
         await sendAnalysisRequest(orderId || '', whatsapp);
       }
 
       setStatus('success');
+
+      // Mark as processed in session storage to prevent double trigger on reload
+      if (orderId) {
+        sessionStorage.setItem(`payment_processed_${orderId}`, 'true');
+      }
 
       // Clear payment whatsapp from localStorage
       localStorage.removeItem('payment_whatsapp');

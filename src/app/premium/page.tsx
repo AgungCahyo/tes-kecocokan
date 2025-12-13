@@ -3,7 +3,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, Sparkles, CheckCircle, XCircle, Loader, CreditCard } from 'lucide-react';
+import { ArrowLeft, Sparkles, CheckCircle, XCircle, Loader, CreditCard, MessageCircle, Check } from 'lucide-react';
 import { useTestStore } from '@/lib/store';
 import { webhookService } from '@/services/webhookServices';
 import { midtransService, MIDTRANS_CONFIG } from '@/services/midtransService';
@@ -30,6 +30,10 @@ export default function PremiumPage() {
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
   const [errorMessage, setErrorMessage] = useState<string>('');
   const [snapLoaded, setSnapLoaded] = useState<boolean>(false);
+  const [isWaVerified, setIsWaVerified] = useState<boolean>(false);
+
+  // Ganti dengan nomor bot WhatsApp yang sesuai (format 62...)
+  const BOT_WA_NUMBER = '6281392290571';
 
   useEffect(() => {
     if (!person1Name || !person2Name || !person1Profile || !person2Profile || !compatibility) {
@@ -222,28 +226,58 @@ export default function PremiumPage() {
               </div>
             )}
 
-            <button
-              onClick={handlePayment}
-              disabled={isProcessing || !snapLoaded}
-              className="w-full py-4 bg-primary hover:bg-primary-hover disabled:opacity-50 disabled:cursor-not-allowed text-white text-lg font-semibold rounded-xl transition-all duration-200 flex items-center justify-center gap-2 shadow-sm"
-            >
-              {isProcessing ? (
-                <>
-                  <Loader className="w-6 h-6 animate-spin" strokeWidth={2.5} />
-                  Memproses...
-                </>
-              ) : !snapLoaded ? (
-                <>
-                  <Loader className="w-6 h-6 animate-spin" strokeWidth={2.5} />
-                  Memuat...
-                </>
-              ) : (
-                <>
-                  <CreditCard className="w-6 h-6" strokeWidth={2.5} />
-                  Bayar & Dapatkan Analisis
-                </>
-              )}
-            </button>
+            {!isWaVerified ? (
+              <div className="space-y-3 p-4 bg-blue-50 border border-blue-200 rounded-xl">
+                <h3 className="font-semibold text-blue-800 mb-2">
+                  Langkah Penting Sebelum Bayar:
+                </h3>
+
+                <a
+                  href={`https://wa.me/${BOT_WA_NUMBER}?text=START`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-full py-3 bg-green-500 hover:bg-green-600 text-white font-semibold rounded-xl transition-all flex items-center justify-center gap-2"
+                >
+                  <MessageCircle className="w-5 h-5" />
+                  1. Kirim Pesan "START" ke Bot
+                </a>
+
+                <button
+                  onClick={() => setIsWaVerified(true)}
+                  className="w-full py-3 bg-white border-2 border-green-500 text-green-600 hover:bg-green-50 font-semibold rounded-xl transition-all flex items-center justify-center gap-2"
+                >
+                  <Check className="w-5 h-5" />
+                  2. Saya Sudah Kirim Pesan
+                </button>
+
+                <p className="text-xs text-blue-600 mt-2 text-center">
+                  *Wajib kirim START agar hasil bisa kami kirimkan ke WhatsApp Anda
+                </p>
+              </div>
+            ) : (
+              <button
+                onClick={handlePayment}
+                disabled={isProcessing || !snapLoaded}
+                className="w-full py-4 bg-primary hover:bg-primary-hover disabled:opacity-50 disabled:cursor-not-allowed text-white text-lg font-semibold rounded-xl transition-all duration-200 flex items-center justify-center gap-2 shadow-sm"
+              >
+                {isProcessing ? (
+                  <>
+                    <Loader className="w-6 h-6 animate-spin" strokeWidth={2.5} />
+                    Memproses...
+                  </>
+                ) : !snapLoaded ? (
+                  <>
+                    <Loader className="w-6 h-6 animate-spin" strokeWidth={2.5} />
+                    Memuat...
+                  </>
+                ) : (
+                  <>
+                    <CreditCard className="w-6 h-6" strokeWidth={2.5} />
+                    Bayar & Dapatkan Analisis
+                  </>
+                )}
+              </button>
+            )}
 
             <p className="text-center text-sm text-text-muted">
               🔒 Pembayaran aman dengan Midtrans
