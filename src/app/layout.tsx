@@ -16,13 +16,14 @@ const geistMono = Geist_Mono({
 
 // SEO Metadata yang Komprehensif
 export const metadata: Metadata = {
+  metadataBase: new URL('https://personalitytest.id'),
   // Basic Meta
   title: {
     default: "Tes Kecocokan Kepribadian - Analisis Hubungan AI",
     template: "%s | Tes Kecocokan Kepribadian"
   },
   description: "Temukan seberapa cocok kepribadian Anda dan pasangan dengan tes MBTI lengkap. Dapatkan analisis mendalam dari AI tentang komunikasi, nilai, dan strategi membangun hubungan harmonis.",
-  
+
   // Keywords
   keywords: [
     "tes kecocokan",
@@ -105,15 +106,6 @@ export const metadata: Metadata = {
   // Manifest
   manifest: "/site.webmanifest",
 
-  // Alternate Languages (jika ada versi bahasa lain)
-  alternates: {
-    canonical: "https://personalitytest.id",
-    languages: {
-      "id-ID": "https://personalitytest.id",
-      "en-US": "https://personalitytest.id/en"
-    }
-  },
-
   // Verification (Google Search Console, Bing, dll)
   verification: {
     google: "your-google-verification-code",
@@ -124,7 +116,7 @@ export const metadata: Metadata = {
   // Other Meta Tags
   category: "Psychology & Relationships",
   classification: "Personality Assessment",
-  
+
   // App-specific
   applicationName: "Tes Kecocokan Kepribadian",
   appleWebApp: {
@@ -132,7 +124,7 @@ export const metadata: Metadata = {
     statusBarStyle: "default",
     title: "Personality Test"
   },
-  
+
   // Format Detection
   formatDetection: {
     telephone: false,
@@ -152,21 +144,21 @@ export default function RootLayout({
         {/* Preconnect ke domain external untuk performa */}
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        
+
         {/* Additional SEO Meta Tags */}
         <meta name="theme-color" content="#a855f7" />
         <meta name="color-scheme" content="light dark" />
-        
+
         {/* Geo Tags (jika target lokal Indonesia) */}
         <meta name="geo.region" content="ID" />
         <meta name="geo.placename" content="Indonesia" />
-        
+
         {/* Rating (untuk konten dewasa/semua umur) */}
         <meta name="rating" content="general" />
-        
+
         {/* Copyright */}
         <meta name="copyright" content="Personality Test AI © 2025" />
-        
+
         {/* Structured Data - Organization */}
         <script
           type="application/ld+json"
@@ -186,7 +178,7 @@ export default function RootLayout({
             })
           }}
         />
-        
+
         {/* Structured Data - WebApplication */}
         <script
           type="application/ld+json"
@@ -215,69 +207,25 @@ export default function RootLayout({
           }}
         />
 
-        {/* Structured Data - BreadcrumbList (untuk halaman tertentu) */}
+        {/* Structured Data - WebSite (Search Box) */}
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{
             __html: JSON.stringify({
               "@context": "https://schema.org",
-              "@type": "BreadcrumbList",
-              "itemListElement": [
-                {
-                  "@type": "ListItem",
-                  "position": 1,
-                  "name": "Home",
-                  "item": "https://personalitytest.id"
-                },
-                {
-                  "@type": "ListItem",
-                  "position": 2,
-                  "name": "Tes Kepribadian",
-                  "item": "https://personalitytest.id/test"
-                }
-              ]
-            })
-          }}
-        />
-
-        {/* FAQ Schema (contoh) */}
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{
-            __html: JSON.stringify({
-              "@context": "https://schema.org",
-              "@type": "FAQPage",
-              "mainEntity": [
-                {
-                  "@type": "Question",
-                  "name": "Apa itu tes kecocokan kepribadian?",
-                  "acceptedAnswer": {
-                    "@type": "Answer",
-                    "text": "Tes kecocokan kepribadian adalah alat untuk mengukur kompatibilitas antara dua orang berdasarkan tipe MBTI, gaya komunikasi, nilai, dan preferensi hidup mereka."
-                  }
-                },
-                {
-                  "@type": "Question",
-                  "name": "Berapa lama tes ini memakan waktu?",
-                  "acceptedAnswer": {
-                    "@type": "Answer",
-                    "text": "Tes memakan waktu sekitar 10-15 menit per orang untuk menjawab 40 pertanyaan."
-                  }
-                },
-                {
-                  "@type": "Question",
-                  "name": "Apakah hasil tes akurat?",
-                  "acceptedAnswer": {
-                    "@type": "Answer",
-                    "text": "Hasil tes didasarkan pada teori kepribadian MBTI yang telah teruji secara ilmiah dan dikombinasikan dengan analisis AI untuk memberikan insight yang mendalam."
-                  }
-                }
-              ]
+              "@type": "WebSite",
+              "name": "Tes Kecocokan Kepribadian",
+              "url": "https://personalitytest.id",
+              "potentialAction": {
+                "@type": "SearchAction",
+                "target": "https://personalitytest.id/search?q={search_term_string}",
+                "query-input": "required name=search_term_string"
+              }
             })
           }}
         />
       </head>
-      
+
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >

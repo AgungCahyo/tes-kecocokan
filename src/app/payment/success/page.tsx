@@ -1,7 +1,7 @@
 // src/app/payment/success/page.tsx
 'use client'
 
-import React, { useEffect, useState, Suspense } from 'react';
+import React, { useEffect, useState, Suspense, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { CheckCircle, Loader, AlertCircle, ArrowRight, Mail, FileText } from 'lucide-react';
 import { useTestStore } from '@/lib/store';
@@ -29,12 +29,22 @@ function PaymentSuccessContent() {
     transactionId: string;
   } | null>(null);
 
+  const isProcessed = useRef(false);
+
   useEffect(() => {
+    if (isProcessed.current) return;
+
     // Get payment details from URL params
     const orderId = searchParams.get('order_id');
     const statusCode = searchParams.get('status_code');
     const transactionStatus = searchParams.get('transaction_status');
     const transactionId = searchParams.get('transaction_id');
+
+    // Only process if we have an orderId to avoid blocking legit retry/refresh if params are missing initially (though unlikely in this flow)
+    // But for the specific "double run" issue where params ARE present, we lock it.
+    // To be safe against "empty params" causing a lock, we check for orderId or simply valid params presence?
+    // Actually, let's just lock it. If valid params are missing, it errors anyway.
+    isProcessed.current = true;
 
     // Verify payment and send analysis request
     verifyAndProcessPayment(orderId, statusCode, transactionStatus, transactionId);
