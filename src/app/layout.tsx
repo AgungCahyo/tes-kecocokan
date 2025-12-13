@@ -16,7 +16,7 @@ const geistMono = Geist_Mono({
 
 // SEO Metadata yang Komprehensif
 export const metadata: Metadata = {
-  metadataBase: new URL('https://personalitytest.id'),
+  metadataBase: new URL('https://personality-test.up.railway.app'),
   // Basic Meta
   title: {
     default: "Tes Kecocokan Kepribadian - Analisis Hubungan AI",
@@ -49,7 +49,7 @@ export const metadata: Metadata = {
   openGraph: {
     type: "website",
     locale: "id_ID",
-    url: "https://personalitytest.id",
+    url: "https://personality-test.up.railway.app",
     siteName: "Tes Kecocokan Kepribadian",
     title: "Tes Kecocokan Kepribadian - Analisis Hubungan dengan AI",
     description: "Tes MBTI lengkap untuk mengukur kecocokan hubungan. Dapatkan analisis mendalam tentang komunikasi, nilai, dan strategi membangun hubungan yang harmonis.",
@@ -108,7 +108,7 @@ export const metadata: Metadata = {
 
   // Verification (Google Search Console, Bing, dll)
   verification: {
-    google: "your-google-verification-code",
+    google: "-JN1yhsT1EHCKgsu7QSURsamXTaPvPpWGKbJ6cM2kwg",
     // yandex: "your-yandex-verification-code",
     // bing: "your-bing-verification-code",
   },

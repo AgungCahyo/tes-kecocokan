@@ -1,7 +1,7 @@
 import { MetadataRoute } from 'next';
 
 export default function sitemap(): MetadataRoute.Sitemap {
-    const baseUrl = 'https://personalitytest.id';
+    const baseUrl = 'https://personality-test.up.railway.app';
 
     return [
         {

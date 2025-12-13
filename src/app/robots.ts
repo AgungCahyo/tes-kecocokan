@@ -7,6 +7,6 @@ export default function robots(): MetadataRoute.Robots {
             allow: '/',
             disallow: '/api/',
         },
-        sitemap: 'https://personalitytest.id/sitemap.xml',
+        sitemap: 'https://personality-test.up.railway.app/sitemap.xml',
     };
 }
