@@ -21,11 +21,7 @@ export interface MidtransPaymentResponse {
 }
 
 export class MidtransService {
-  private webhookUrl: string;
-
-  constructor(webhookUrl: string) {
-    this.webhookUrl = webhookUrl;
-  }
+  // webhookUrl no longer needed - we call internal API route
 
   async createTransaction(
     phoneNumber: string,
@@ -33,44 +29,29 @@ export class MidtransService {
     person2Name: string
   ): Promise<MidtransPaymentResponse> {
     try {
-      const orderId = `PREMIUM-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-
-      const payload: MidtransPaymentRequest = {
-        orderId,
-        amount: 14899,
-        customerPhone: phoneNumber,
-        customerName: `${person1Name} & ${person2Name}`,
-        itemDetails: [
-          {
-            id: 'premium-analysis',
-            name: 'Analisis Premium AI - Personality Compatibility',
-            price: 14899,
-            quantity: 1
-          }
-        ]
-      };
-
-      const response = await fetch(this.webhookUrl, {
+      // Call our secure API route instead of external webhook
+      const response = await fetch('/api/payment/create', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          action: 'create_payment',
-          ...payload
+          phoneNumber,
+          person1Name,
+          person2Name
         }),
       });
 
-      if (!response.ok) {
-        throw new Error(`Payment creation failed: ${response.status}`);
-      }
-
       const data = await response.json();
+
+      if (!response.ok || !data.success) {
+        throw new Error(data.error || 'Gagal membuat transaksi');
+      }
 
       return {
         success: true,
         token: data.token,
-        redirectUrl: data.redirect_url
+        redirectUrl: data.redirectUrl
       };
     } catch (error) {
       console.error('Error creating Midtrans transaction:', error);
@@ -87,15 +68,13 @@ export class MidtransService {
     error?: string;
   }> {
     try {
-      const response = await fetch(this.webhookUrl, {
+      // Call internal API route for payment status (to be implemented if needed)
+      const response = await fetch('/api/payment/status', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          action: 'check_payment_status',
-          orderId
-        }),
+        body: JSON.stringify({ orderId }),
       });
 
       if (!response.ok) {
@@ -106,7 +85,7 @@ export class MidtransService {
 
       return {
         success: true,
-        status: data.transaction_status
+        status: data.status
       };
     } catch (error) {
       console.error('Error checking payment status:', error);
@@ -118,12 +97,12 @@ export class MidtransService {
   }
 }
 
-// Configuration
+// Configuration - Only client-side config needed now
+// webhookUrl moved to server-side API route
 export const MIDTRANS_CONFIG = {
-  webhookUrl: process.env.NEXT_PUBLIC_MIDTRANS_WEBHOOK_URL,
   enabled: process.env.NEXT_PUBLIC_MIDTRANS_ENABLED,
   snapUrl: process.env.NEXT_PUBLIC_MIDTRANS_SNAP_URL,
   clientKey: process.env.NEXT_PUBLIC_MIDTRANS_CLIENT_KEY,
 };
 
-export const midtransService = new MidtransService(MIDTRANS_CONFIG.webhookUrl || "");
+export const midtransService = new MidtransService();

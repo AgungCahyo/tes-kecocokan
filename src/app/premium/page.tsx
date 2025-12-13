@@ -31,6 +31,8 @@ export default function PremiumPage() {
   const [errorMessage, setErrorMessage] = useState<string>('');
   const [snapLoaded, setSnapLoaded] = useState<boolean>(false);
   const [isWaVerified, setIsWaVerified] = useState<boolean>(false);
+  const [isPolling, setIsPolling] = useState<boolean>(false);
+  const [pollCount, setPollCount] = useState<number>(0);
 
   // Ganti dengan nomor bot WhatsApp yang sesuai (format 62...)
   const BOT_WA_NUMBER = '6281392290571';
@@ -42,16 +44,73 @@ export default function PremiumPage() {
   }, [person1Name, person2Name, person1Profile, person2Profile, compatibility, router]);
 
   useEffect(() => {
+    // Check if already loaded from previous navigation
+    if (typeof window !== 'undefined' && window.snap) {
+      setSnapLoaded(true);
+      return;
+    }
+
+    // Check if script tag already exists
+    const existingScript = document.querySelector(
+      `script[src="${MIDTRANS_CONFIG.snapUrl}"]`
+    ) as HTMLScriptElement | null;
+
+    if (existingScript) {
+      // Script exists, wait for it to load or check if already loaded
+      if (window.snap) {
+        setSnapLoaded(true);
+      } else {
+        existingScript.addEventListener('load', () => setSnapLoaded(true));
+      }
+      return;
+    }
+
+    // Load new script
     const snapScript = document.createElement('script');
     snapScript.src = MIDTRANS_CONFIG.snapUrl || '';
     snapScript.setAttribute('data-client-key', MIDTRANS_CONFIG.clientKey || '');
     snapScript.onload = () => setSnapLoaded(true);
+    snapScript.onerror = () => console.error('Failed to load Midtrans Snap');
     document.body.appendChild(snapScript);
 
-    return () => {
-      document.body.removeChild(snapScript);
-    };
+    // Don't remove script on cleanup - it should persist
   }, []);
+
+  // Polling for WA verification
+  useEffect(() => {
+    if (!isPolling || isWaVerified) return;
+
+    const cleanNumber = whatsappNumber.replace(/\D/g, '');
+    if (cleanNumber.length < 10) {
+      setIsPolling(false);
+      return;
+    }
+
+    const pollInterval = setInterval(async () => {
+      try {
+        const response = await fetch(`/api/wa/check?phone=${cleanNumber}`);
+        const data = await response.json();
+
+        if (data.verified) {
+          setIsWaVerified(true);
+          setIsPolling(false);
+          return;
+        }
+
+        setPollCount(prev => {
+          if (prev >= 30) {
+            setIsPolling(false);
+            return 0;
+          }
+          return prev + 1;
+        });
+      } catch (e) {
+        console.error('Polling error:', e);
+      }
+    }, 2000);
+
+    return () => clearInterval(pollInterval);
+  }, [isPolling, isWaVerified, whatsappNumber]);
 
   const handlePayment = async () => {
     // Basic validation for phone number (only numbers, min 10 digits)
@@ -141,7 +200,7 @@ export default function PremiumPage() {
   return (
     <div className="min-h-screen bg-bg-alt">
       <div className="max-w-3xl mx-auto p-4 py-8">
-        <div className="bg-white rounded-3xl shadow-lg border border-border p-8 md:p-12">
+        <div className="bg-card-bg rounded-3xl shadow-lg border border-border p-8 md:p-12">
 
           {/* Header */}
           <div className="text-center mb-8">
@@ -220,19 +279,33 @@ export default function PremiumPage() {
                   href={`https://wa.me/${BOT_WA_NUMBER}?text=START`}
                   target="_blank"
                   rel="noopener noreferrer"
+                  onClick={() => {
+                    // Start polling after user clicks
+                    if (whatsappNumber.replace(/\D/g, '').length >= 10) {
+                      setIsPolling(true);
+                      setPollCount(0);
+                    }
+                  }}
                   className="w-full py-3 bg-green-500 hover:bg-green-600 text-white font-semibold rounded-xl transition-all flex items-center justify-center gap-2"
                 >
                   <MessageCircle className="w-5 h-5" />
                   1. Kirim Pesan "START" ke Bot
                 </a>
 
-                <button
-                  onClick={() => setIsWaVerified(true)}
-                  className="w-full py-3 bg-white border-2 border-green-500 text-green-600 hover:bg-green-50 font-semibold rounded-xl transition-all flex items-center justify-center gap-2"
-                >
-                  <Check className="w-5 h-5" />
-                  2. Saya Sudah Kirim Pesan
-                </button>
+                {isPolling ? (
+                  <div className="w-full py-3 bg-yellow-50 border-2 border-yellow-400 text-yellow-700 font-semibold rounded-xl flex items-center justify-center gap-2">
+                    <Loader className="w-5 h-5 animate-spin" />
+                    Menunggu verifikasi... ({pollCount}/30)
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => setIsWaVerified(true)}
+                    className="w-full py-3 bg-card-bg border-2 border-green-500 text-green-600 hover:bg-green-50 font-semibold rounded-xl transition-all flex items-center justify-center gap-2"
+                  >
+                    <Check className="w-5 h-5" />
+                    2. Saya Sudah Kirim Pesan
+                  </button>
+                )}
 
                 <p className="text-xs text-blue-600 mt-2 text-center">
                   *Wajib kirim START agar hasil bisa kami kirimkan ke WhatsApp Anda

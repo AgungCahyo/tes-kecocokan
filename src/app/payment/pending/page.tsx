@@ -28,7 +28,7 @@ function PaymentPendingContent() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-bg-alt p-4">
-      <div className="max-w-2xl w-full bg-white rounded-3xl shadow-lg border border-border p-8 md:p-12">
+      <div className="max-w-2xl w-full bg-card-bg rounded-3xl shadow-lg border border-border p-8 md:p-12">
         <div className="text-center mb-8">
           <div className="inline-flex items-center justify-center w-20 h-20 bg-yellow-50 rounded-2xl mb-6">
             <Clock className="w-12 h-12 text-yellow-500" strokeWidth={2.5} />

@@ -30,77 +30,44 @@ function PaymentSuccessContent() {
   } | null>(null);
 
   useEffect(() => {
-    // Get payment details from URL params
     const orderId = searchParams.get('order_id');
     const statusCode = searchParams.get('status_code');
     const transactionStatus = searchParams.get('transaction_status');
     const transactionId = searchParams.get('transaction_id');
 
-    // Idempotency Check: Prevent double processing on reload
-    // We use sessionStorage so it persists during the session (reloads) but clears on browser close
-    if (orderId) {
-      const storageKey = `payment_processed_${orderId}`;
-      if (typeof window !== 'undefined' && sessionStorage.getItem(storageKey)) {
-        // If already processed, just restore state or do nothing (user sees success UI)
-        // We might want to ensure we show "Success" state if it was successful before?
-        // For now, let's just assume if it's in storage, we don't trigger backend.
-        // But we DO need to show the UI. 
-        // Actually, if we skip 'verifyAndProcessPayment', the state remains 'verifying'.
-        // We should probably just call verifying but NOT send the webhook?
-        // Or simpler: The previous logic sets state to 'success' at the end.
-        // If we skip, we must manually set 'success' and 'orderDetails' if possible.
-        // However, retrieving order details from LS might be complex if we didn't save them.
+    // Check if order was already processed (server-side + client fallback)
+    const checkAndProcess = async () => {
+      if (orderId) {
+        // Try server-side check first
+        try {
+          const response = await fetch('/api/payment/verify', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ orderId, action: 'check' })
+          });
+          const data = await response.json();
+          if (data.processed) {
+            // Already processed on server - show success UI but skip webhook
+            verifyAndProcessPayment(orderId, statusCode, transactionStatus, transactionId, true);
+            return;
+          }
+        } catch (e) {
+          console.log('Server check failed, using client-side fallback');
+        }
 
-        // BETTER APPROACH:
-        // Let verifyAndProcessPayment run, but inside it, check storage before sending webhook.
-        // But verifyAndProcessPayment sets the UI state.
-
-        // Let's modify verifyAndProcessPayment instead? 
-        // No, the instruction was to modify the useEffect or the check.
-
-        // Let's keep it simple:
-        // If processed, we still probably want to show the "Success" UI.
-        // The current code fetches data from params.
-        // If we block the WHOLE function, we get stuck on "Verifying...".
-
-        // So, we should ALLOW UI rendering but BLOCK the webhook.
-        // The webhook is sent in `sendAnalysisRequest`.
-
-        // Let's change the plan slightly to be more robust:
-        // Pass a flag to verifyAndProcessPayment?
-        // Or check storage inside logic?
-
-        // Let's stick to the plan: "Check if key exists... If no, set key and proceed."
-        // Wait, if I block `verifyAndProcessPayment`, the UI dies.
-        // I need to prevent the *expensive* part (backend trigger).
-
-        // Let's proceed with calling the function, but inside the function verify valid status.
-        // Actually `verifyAndProcessPayment` does:
-        // 1. Validate status
-        // 2. Get whatsapp
-        // 3. Set UI status 'success'
-        // 4. `sendAnalysisRequest` (THIS is the duplicate trigger)
-
-        // So I should wrap `sendAnalysisRequest` call or check inside it.
-
-        // But the previous `useRef` block prevented the WHOLE `verifyAndProcessPayment`.
-        // If I restore THAT behavior with sessionStorage, the user who reloads checks "Verifying..." forever.
-        // That is BAD UX. 
-
-        // So `useRef` was actually "wrong" for reloads too if it blocked UI?
-        // Ah, `useRef` is false on reload, so code runs again.
-
-        // If I use `sessionStorage`, I block it permenantly for that session.
-        // So I MUST parse params and show success, but NOT send webhook.
-
-        // If processed, we still want to show the "Success" UI (so we call the function),
-        // but we MUST prevent the expensive webhook trigger.
-        verifyAndProcessPayment(orderId, statusCode, transactionStatus, transactionId, true);
-        return;
+        // Client-side fallback check (sessionStorage)
+        const storageKey = `payment_processed_${orderId}`;
+        if (typeof window !== 'undefined' && sessionStorage.getItem(storageKey)) {
+          verifyAndProcessPayment(orderId, statusCode, transactionStatus, transactionId, true);
+          return;
+        }
       }
-    }
 
-    verifyAndProcessPayment(orderId, statusCode, transactionStatus, transactionId, false);
+      // Not processed yet - run full verification
+      verifyAndProcessPayment(orderId, statusCode, transactionStatus, transactionId, false);
+    };
+
+    checkAndProcess();
   }, [searchParams]);
 
   const verifyAndProcessPayment = async (
@@ -152,9 +119,15 @@ function PaymentSuccessContent() {
 
       setStatus('success');
 
-      // Mark as processed in session storage to prevent double trigger on reload
-      if (orderId) {
+      // Mark as processed (both client and server)
+      if (orderId && !skipWebhook) {
         sessionStorage.setItem(`payment_processed_${orderId}`, 'true');
+        // Mark on server for cross-tab/device protection
+        fetch('/api/payment/verify', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ orderId, action: 'mark' })
+        }).catch(e => console.log('Server mark failed:', e));
       }
 
       // Clear payment whatsapp from localStorage
@@ -163,6 +136,28 @@ function PaymentSuccessContent() {
       console.error('Payment verification error:', error);
       setStatus('error');
       setErrorMessage(error instanceof Error ? error.message : 'Terjadi kesalahan saat memverifikasi pembayaran');
+    }
+  };
+
+  // Helper function for robust storage data recovery
+  const getStorageData = () => {
+    try {
+      const stored = localStorage.getItem('personality-test-storage');
+      if (!stored) {
+        console.log('No data found in localStorage');
+        return null;
+      }
+
+      const parsed = JSON.parse(stored);
+      if (!parsed?.state) {
+        console.log('Invalid data structure in localStorage');
+        return null;
+      }
+
+      return parsed.state;
+    } catch (e) {
+      console.error('Storage recovery failed:', e);
+      return null;
     }
   };
 
@@ -177,35 +172,26 @@ function PaymentSuccessContent() {
     let compat = compatibility;
 
     // 2. Fallback: Try to get from LocalStorage if store is empty
-    // This handles cases where hydration hasn't finished or context is lost
     if (!p1Profile || !p2Profile || !compat) {
       console.log('Store data missing, attempting fallback to localStorage...');
-      try {
-        const storedData = localStorage.getItem('personality-test-storage');
-        if (storedData) {
-          const parsed = JSON.parse(storedData);
-          if (parsed.state) {
-            const s = parsed.state;
-            p1Name = s.person1Name || p1Name;
-            p2Name = s.person2Name || p2Name;
-            p1Answers = s.person1Answers || p1Answers;
-            p2Answers = s.person2Answers || p2Answers;
-            p1Profile = s.person1Profile || p1Profile;
-            p2Profile = s.person2Profile || p2Profile;
-            compat = s.compatibility || compat;
-            console.log('Data recovered from localStorage');
-          }
-        }
-      } catch (e) {
-        console.error('Failed to parse localStorage fallback:', e);
+      const recovered = getStorageData();
+      if (recovered) {
+        p1Name = recovered.person1Name || p1Name;
+        p2Name = recovered.person2Name || p2Name;
+        p1Answers = recovered.person1Answers || p1Answers;
+        p2Answers = recovered.person2Answers || p2Answers;
+        p1Profile = recovered.person1Profile || p1Profile;
+        p2Profile = recovered.person2Profile || p2Profile;
+        compat = recovered.compatibility || compat;
+        console.log('Data recovered from localStorage');
       }
     }
 
-    // 3. Final Check
+    // 3. Final Check - Show helpful error with Order ID
     if (!p1Profile || !p2Profile || !compat) {
       console.error('CRITICAL: Failed to send webhook. Data missing in both Store and LocalStorage.');
-      setErrorMessage('Gagal mengirim data analisis. Silakan hubungi admin.');
-      setStatus('error'); // Show error so user knows to contact support
+      setErrorMessage(`Data hilang. Hubungi support dengan Order ID: ${orderId}`);
+      setStatus('error');
       return;
     }
 
@@ -249,7 +235,7 @@ function PaymentSuccessContent() {
   if (status === 'verifying') {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 p-4">
-        <div className="max-w-md w-full bg-white rounded-3xl shadow-2xl p-8">
+        <div className="max-w-md w-full bg-card-bg rounded-3xl shadow-2xl p-8">
           <div className="text-center">
             <Loader className="w-16 h-16 mx-auto mb-6 text-purple-500 animate-spin" />
             <h1 className="text-2xl font-bold text-gray-800 mb-2">
@@ -268,7 +254,7 @@ function PaymentSuccessContent() {
   if (status === 'error') {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 p-4">
-        <div className="max-w-md w-full bg-white rounded-3xl shadow-2xl p-8">
+        <div className="max-w-md w-full bg-card-bg rounded-3xl shadow-2xl p-8">
           <div className="text-center">
             <AlertCircle className="w-16 h-16 mx-auto mb-6 text-red-500" />
             <h1 className="text-2xl font-bold text-gray-800 mb-2">
@@ -301,7 +287,7 @@ function PaymentSuccessContent() {
   // Success state
   return (
     <div className="min-h-screen flex items-center justify-center bg-bg-alt p-4">
-      <div className="max-w-2xl w-full bg-white rounded-3xl shadow-lg border border-border p-8 md:p-12">
+      <div className="max-w-2xl w-full bg-card-bg rounded-3xl shadow-lg border border-border p-8 md:p-12">
         <div className="text-center mb-8">
           <div className="inline-flex items-center justify-center w-20 h-20 bg-green-50 rounded-2xl mb-6">
             <CheckCircle className="w-12 h-12 text-green-500" strokeWidth={2.5} />

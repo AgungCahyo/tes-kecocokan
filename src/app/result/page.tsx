@@ -113,7 +113,7 @@ export default function ResultPage() {
             ].map((item, idx) => {
               const Icon = item.icon;
               return (
-                <div key={idx} className="bg-white border md:border-2 border-border rounded-2xl p-5 text-center transition-all hover:-translate-y-1 hover:shadow-lg">
+                <div key={idx} className="bg-card-bg border md:border-2 border-border rounded-2xl p-5 text-center transition-all hover:-translate-y-1 hover:shadow-lg">
                   <div className="w-10 h-10 mx-auto bg-primary-light rounded-full flex items-center justify-center mb-3">
                     <Icon className="w-5 h-5 text-primary" strokeWidth={2.5} />
                   </div>
@@ -161,17 +161,17 @@ export default function ResultPage() {
 
                     <div className="space-y-3">
                       <div className="grid grid-cols-2 gap-3 mb-4">
-                        <div className="bg-white rounded-xl p-3 shadow-sm">
+                        <div className="bg-card-bg rounded-xl p-3 shadow-sm">
                           <p className="text-[10px] uppercase tracking-wider text-text-muted mb-1 font-semibold">Energi</p>
                           <p className="font-semibold text-gray-800 text-sm">{person.traits?.energy ?? '-'}</p>
                         </div>
-                        <div className="bg-white rounded-xl p-3 shadow-sm">
+                        <div className="bg-card-bg rounded-xl p-3 shadow-sm">
                           <p className="text-[10px] uppercase tracking-wider text-text-muted mb-1 font-semibold">Keputusan</p>
                           <p className="font-semibold text-gray-800 text-sm">{person.traits?.decisions ?? '-'}</p>
                         </div>
                       </div>
 
-                      <div className="bg-white rounded-2xl p-4 shadow-sm space-y-3">
+                      <div className="bg-card-bg rounded-2xl p-4 shadow-sm space-y-3">
                         <div className="flex justify-between items-center text-sm border-b border-gray-100 pb-2">
                           <span className="text-text-muted">Komunikasi</span>
                           <span className="font-medium text-gray-900">{person.commStyle}</span>
