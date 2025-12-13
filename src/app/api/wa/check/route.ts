@@ -10,7 +10,8 @@ export async function GET(req: NextRequest) {
             return NextResponse.json({ verified: false }, { status: 400 });
         }
 
-        return NextResponse.json({ verified: isVerified(phone) });
+        const verified = await isVerified(phone);
+        return NextResponse.json({ verified });
 
     } catch (error) {
         console.error('WA check error:', error);
@@ -18,7 +19,6 @@ export async function GET(req: NextRequest) {
     }
 }
 
-// Also accept POST for marking (alternative)
 export async function POST(req: NextRequest) {
     try {
         const { phone, action } = await req.json();
@@ -28,11 +28,12 @@ export async function POST(req: NextRequest) {
         }
 
         if (action === 'mark') {
-            markVerified(phone);
-            return NextResponse.json({ success: true });
+            const success = await markVerified(phone);
+            return NextResponse.json({ success });
         }
 
-        return NextResponse.json({ verified: isVerified(phone) });
+        const verified = await isVerified(phone);
+        return NextResponse.json({ verified });
 
     } catch (error) {
         return NextResponse.json({ verified: false }, { status: 500 });

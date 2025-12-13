@@ -1,30 +1,62 @@
 // src/lib/waVerificationStore.ts
-// Shared in-memory store for WA verification (use Redis in production)
+// Redis-based store for WA verification (works across serverless instances)
+import Redis from 'ioredis';
 
-const verifiedPhones = new Map<string, { verified: boolean; timestamp: number }>();
+// Create Redis client (use REDIS_URL from env)
+const getRedisClient = () => {
+    const redisUrl = process.env.REDIS_URL;
+    if (!redisUrl) {
+        console.warn('REDIS_URL not set, verification will not persist');
+        return null;
+    }
+    return new Redis(redisUrl);
+};
 
-// Clean up entries older than 5 minutes
-export const cleanupOldEntries = () => {
-    const fiveMinutesAgo = Date.now() - 5 * 60 * 1000;
-    for (const [phone, data] of verifiedPhones.entries()) {
-        if (data.timestamp < fiveMinutesAgo) {
-            verifiedPhones.delete(phone);
-        }
+let redis: Redis | null = null;
+
+const getRedis = () => {
+    if (!redis) {
+        redis = getRedisClient();
+    }
+    return redis;
+};
+
+// Key prefix for WA verification
+const KEY_PREFIX = 'wa_verified:';
+const EXPIRY_SECONDS = 300; // 5 minutes
+
+export const markVerified = async (phone: string): Promise<boolean> => {
+    const normalizedPhone = phone.replace(/\D/g, '');
+    const client = getRedis();
+
+    if (!client) {
+        console.error('Redis not available');
+        return false;
+    }
+
+    try {
+        await client.set(`${KEY_PREFIX}${normalizedPhone}`, 'true', 'EX', EXPIRY_SECONDS);
+        console.log(`WA Verified: ${normalizedPhone}`);
+        return true;
+    } catch (error) {
+        console.error('Redis markVerified error:', error);
+        return false;
     }
 };
 
-export const markVerified = (phone: string) => {
+export const isVerified = async (phone: string): Promise<boolean> => {
     const normalizedPhone = phone.replace(/\D/g, '');
-    cleanupOldEntries();
-    verifiedPhones.set(normalizedPhone, {
-        verified: true,
-        timestamp: Date.now()
-    });
-    console.log(`WA Verified: ${normalizedPhone}`);
-};
+    const client = getRedis();
 
-export const isVerified = (phone: string): boolean => {
-    const normalizedPhone = phone.replace(/\D/g, '');
-    const data = verifiedPhones.get(normalizedPhone);
-    return data?.verified || false;
+    if (!client) {
+        return false;
+    }
+
+    try {
+        const result = await client.get(`${KEY_PREFIX}${normalizedPhone}`);
+        return result === 'true';
+    } catch (error) {
+        console.error('Redis isVerified error:', error);
+        return false;
+    }
 };

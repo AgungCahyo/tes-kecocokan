@@ -22,12 +22,12 @@ export async function POST(req: NextRequest) {
             );
         }
 
-        // Mark as verified in shared store
-        markVerified(phone);
+        // Mark as verified in Redis
+        const success = await markVerified(phone);
 
         return NextResponse.json({
-            success: true,
-            message: 'Phone verified'
+            success,
+            message: success ? 'Phone verified' : 'Verification failed'
         });
 
     } catch (error) {
