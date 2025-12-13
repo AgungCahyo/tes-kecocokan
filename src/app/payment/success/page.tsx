@@ -142,7 +142,11 @@ function PaymentSuccessContent() {
       });
 
       // Send analysis request if we have all data
-      if (person1Profile && person2Profile && compatibility && !skipWebhook) {
+      // Send analysis request if we have all data
+      // We pass the skipWebhook flag to prevent double processing
+      if (!skipWebhook) {
+        // We now handle data verification INSIDE sendAnalysisRequest
+        // to support fallback to localStorage if store is empty
         await sendAnalysisRequest(orderId || '', whatsapp);
       }
 
@@ -163,21 +167,61 @@ function PaymentSuccessContent() {
   };
 
   const sendAnalysisRequest = async (orderId: string, whatsapp: string) => {
-    if (!person1Profile || !person2Profile || !compatibility) return;
+    // 1. Try to get data from Store (Zustand)
+    let p1Name = person1Name;
+    let p2Name = person2Name;
+    let p1Answers = person1Answers;
+    let p2Answers = person2Answers;
+    let p1Profile = person1Profile;
+    let p2Profile = person2Profile;
+    let compat = compatibility;
+
+    // 2. Fallback: Try to get from LocalStorage if store is empty
+    // This handles cases where hydration hasn't finished or context is lost
+    if (!p1Profile || !p2Profile || !compat) {
+      console.log('Store data missing, attempting fallback to localStorage...');
+      try {
+        const storedData = localStorage.getItem('personality-test-storage');
+        if (storedData) {
+          const parsed = JSON.parse(storedData);
+          if (parsed.state) {
+            const s = parsed.state;
+            p1Name = s.person1Name || p1Name;
+            p2Name = s.person2Name || p2Name;
+            p1Answers = s.person1Answers || p1Answers;
+            p2Answers = s.person2Answers || p2Answers;
+            p1Profile = s.person1Profile || p1Profile;
+            p2Profile = s.person2Profile || p2Profile;
+            compat = s.compatibility || compat;
+            console.log('Data recovered from localStorage');
+          }
+        }
+      } catch (e) {
+        console.error('Failed to parse localStorage fallback:', e);
+      }
+    }
+
+    // 3. Final Check
+    if (!p1Profile || !p2Profile || !compat) {
+      console.error('CRITICAL: Failed to send webhook. Data missing in both Store and LocalStorage.');
+      setErrorMessage('Gagal mengirim data analisis. Silakan hubungi admin.');
+      setStatus('error'); // Show error so user knows to contact support
+      return;
+    }
 
     try {
+      console.log('Sending webhook with data for Order:', orderId);
       const payload = webhookService.createPayload(
-        person1Name,
-        person1Answers,
-        person1Profile,
-        person2Name,
-        person2Answers,
-        person2Profile,
-        compatibility
+        p1Name,
+        p1Answers,
+        p1Profile,
+        p2Name,
+        p2Answers,
+        p2Profile,
+        compat
       );
 
       const fullPayload = {
-        ...payload,
         ...payload,
         whatsapp,
         orderId,
@@ -186,6 +230,7 @@ function PaymentSuccessContent() {
       };
 
       await webhookService.sendToN8N(fullPayload);
+      console.log('Webhook sent successfully!');
     } catch (error) {
       console.error('Error sending analysis request:', error);
       // Don't show error to user - they already paid

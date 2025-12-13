@@ -82,24 +82,8 @@ export default function PremiumPage() {
 
         window.snap.pay(paymentResponse.token, {
           onSuccess: async function (result: any) {
-            try {
-              const payload = {
-                ...webhookService.createPayload(
-                  person1Name,
-                  person1Answers,
-                  person1Profile!,
-                  person2Name,
-                  person2Answers,
-                  person2Profile!,
-                  compatibility
-                ),
-                whatsapp: cleanNumber
-              };
-
-              await webhookService.sendToN8N(payload);
-            } catch (err) {
-              console.error('Error saat kirim webhook:', err);
-            }
+            // Webhook trigger moved to success page to prevent double firing
+            // and ensure cleaner flow (loading state -> success)
 
             const params = new URLSearchParams({
               order_id: result.order_id || '',
