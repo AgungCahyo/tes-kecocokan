@@ -1,11 +1,12 @@
-// src/app/result/page.tsx - Updated Clean Gen Z Style
+// src/app/result/page.tsx - Refactored with modular components
 'use client'
 
 import React from 'react';
 import { useRouter } from 'next/navigation';
-import { Heart, MessageCircle, Smile, TrendingUp, Users, RefreshCw, Sparkles } from "lucide-react";
+import { MessageCircle, Smile, Heart, Users, RefreshCw, Sparkles } from "lucide-react";
 import { useTestStore } from '@/lib/store';
 import { getPersonalityDescription, calculateCompatibility } from '@/app/data';
+import { CompatibilityScore, PersonalityCard } from '@/components/result';
 
 export default function ResultPage() {
   const router = useRouter();
@@ -45,6 +46,9 @@ export default function ResultPage() {
     router.push('/premium');
   };
 
+  const person1Info = getPersonalityDescription(person1Profile.type || 'ISFJ');
+  const person2Info = getPersonalityDescription(person2Profile.type || 'ISFJ');
+
   return (
     <div className="min-h-screen py-8 px-4">
       <div className="max-w-4xl mx-auto">
@@ -60,29 +64,10 @@ export default function ResultPage() {
             </p>
           </div>
 
-          {/* Compatibility Score - Hero Card */}
-          <div className="bg-gradient-to-br from-primary to-rose-700 text-white rounded-3xl p-10 mb-12 shadow-xl relative overflow-hidden group">
-            <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl -mr-16 -mt-16 group-hover:scale-110 transition-transform duration-700" />
-            <div className="absolute bottom-0 left-0 w-64 h-64 bg-black/10 rounded-full blur-3xl -ml-16 -mb-16 group-hover:scale-110 transition-transform duration-700" />
+          {/* Compatibility Score - Using Component */}
+          <CompatibilityScore score={compatibility?.overall ?? 0} />
 
-            <div className="relative z-10 text-center">
-              <h2 className="text-xl font-medium mb-6 opacity-90 uppercase tracking-widest text-white/80">
-                Tingkat Kecocokan
-              </h2>
-              <div className="flex items-center justify-center gap-1 mb-4">
-                <span className="text-8xl md:text-9xl font-black tracking-tighter drop-shadow-sm">
-                  {compatibility?.overall ?? 0}
-                </span>
-                <span className="text-4xl md:text-5xl font-bold opacity-80 mt-8">%</span>
-              </div>
-              <div className="inline-flex items-center gap-2 px-4 py-2 bg-white/20 backdrop-blur-md rounded-full border border-white/20">
-                <Sparkles className="w-4 h-4 text-white" />
-                <span className="text-sm font-semibold">Potensi Hubungan Harmonis</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Premium CTA - Subtle */}
+          {/* Premium CTA */}
           <div className="bg-gradient-to-r from-gray-50 to-white border border-border rounded-2xl p-6 mb-12 flex flex-col md:flex-row items-center gap-6 shadow-sm hover:shadow-md transition-shadow">
             <div className="flex-shrink-0 w-14 h-14 bg-primary/10 rounded-2xl flex items-center justify-center">
               <Sparkles className="w-7 h-7 text-primary" strokeWidth={2} />
@@ -126,7 +111,7 @@ export default function ResultPage() {
             })}
           </div>
 
-          {/* Individual Personality */}
+          {/* Individual Personality - Using Component */}
           <div className="mb-12">
             <h2 className="text-2xl font-bold text-gray-900 mb-8 flex items-center gap-2">
               <Users className="w-6 h-6 text-primary" />
@@ -134,61 +119,18 @@ export default function ResultPage() {
             </h2>
 
             <div className="grid md:grid-cols-2 gap-8">
-              {[
-                { ...person1Profile, name: person1Name },
-                { ...person2Profile, name: person2Name }
-              ].map((person, idx) => {
-                const info = getPersonalityDescription(person.type || 'ISFJ');
-                return (
-                  <div key={idx} className="bg-secondary/30 rounded-3xl p-6 md:p-8 border border-border/50">
-                    <div className="mb-6 flex items-start justify-between">
-                      <div>
-                        <h3 className="text-xl font-bold text-gray-900 mb-1">
-                          {person.name}
-                        </h3>
-                        <span className="text-primary font-bold bg-primary-light px-3 py-1 rounded-full text-sm">
-                          {person.type}
-                        </span>
-                      </div>
-                    </div>
-
-                    <div className="mb-6">
-                      <p className="text-lg font-semibold text-gray-800 mb-2">
-                        {info.title}
-                      </p>
-                      <p className="text-text-muted text-sm leading-relaxed">{info.desc}</p>
-                    </div>
-
-                    <div className="space-y-3">
-                      <div className="grid grid-cols-2 gap-3 mb-4">
-                        <div className="bg-card-bg rounded-xl p-3 shadow-sm">
-                          <p className="text-[10px] uppercase tracking-wider text-text-muted mb-1 font-semibold">Energi</p>
-                          <p className="font-semibold text-gray-800 text-sm">{person.traits?.energy ?? '-'}</p>
-                        </div>
-                        <div className="bg-card-bg rounded-xl p-3 shadow-sm">
-                          <p className="text-[10px] uppercase tracking-wider text-text-muted mb-1 font-semibold">Keputusan</p>
-                          <p className="font-semibold text-gray-800 text-sm">{person.traits?.decisions ?? '-'}</p>
-                        </div>
-                      </div>
-
-                      <div className="bg-card-bg rounded-2xl p-4 shadow-sm space-y-3">
-                        <div className="flex justify-between items-center text-sm border-b border-gray-100 pb-2">
-                          <span className="text-text-muted">Komunikasi</span>
-                          <span className="font-medium text-gray-900">{person.commStyle}</span>
-                        </div>
-                        <div className="flex justify-between items-center text-sm border-b border-gray-100 pb-2">
-                          <span className="text-text-muted">Love Language</span>
-                          <span className="font-medium text-gray-900">{person.loveLanguage}</span>
-                        </div>
-                        <div className="flex justify-between items-center text-sm">
-                          <span className="text-text-muted">Nilai Utama</span>
-                          <span className="font-medium text-gray-900">{person.topValue}</span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
+              <PersonalityCard
+                name={person1Name}
+                profile={person1Profile}
+                title={person1Info.title}
+                description={person1Info.desc}
+              />
+              <PersonalityCard
+                name={person2Name}
+                profile={person2Profile}
+                title={person2Info.title}
+                description={person2Info.desc}
+              />
             </div>
           </div>
 

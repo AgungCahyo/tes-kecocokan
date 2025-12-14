@@ -1,9 +1,11 @@
-// src/app/payment/pending/page.tsx
+// src/app/payment/pending/page.tsx - Refactored with modular components
 'use client'
 
 import React, { Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Clock, Loader, AlertTriangle, ArrowRight, RefreshCw } from 'lucide-react';
+import { Clock, Loader, AlertTriangle, RefreshCw } from 'lucide-react';
+import { PaymentStatusCard, OrderDetails } from '@/components/payment';
+import { LoadingSpinner } from '@/components/ui';
 
 function PaymentPendingContent() {
   const router = useRouter();
@@ -14,57 +16,34 @@ function PaymentPendingContent() {
   const paymentType = searchParams.get('payment_type') || 'unknown';
 
   const handleCheckStatus = () => {
-    // Redirect to check payment status
     window.location.reload();
-  };
-
-  const handleBackToHome = () => {
-    router.push('/');
   };
 
   const handleBackToPremium = () => {
     router.push('/premium');
   };
 
+  const orderDetails = [
+    { label: 'Order ID', value: orderId },
+    { label: 'Transaction ID', value: transactionId },
+    { label: 'Metode', value: paymentType.replace('_', ' ') },
+    { label: 'Status', value: 'Menunggu Pembayaran', highlight: true }
+  ];
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-bg-alt p-4">
       <div className="max-w-2xl w-full bg-card-bg rounded-3xl shadow-lg border border-border p-8 md:p-12">
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-20 h-20 bg-yellow-50 rounded-2xl mb-6">
-            <Clock className="w-12 h-12 text-yellow-500" strokeWidth={2.5} />
-          </div>
-          <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-2">
-            Pembayaran Pending
-          </h1>
-          <p className="text-lg text-text-muted">
-            Pembayaran sedang dalam proses
-          </p>
-        </div>
 
-        {/* Order Details */}
-        <div className="bg-yellow-50 border-2 border-yellow-300 rounded-2xl p-6 mb-8">
-          <h2 className="text-xl font-bold text-gray-900 mb-4">
-            Detail Pesanan
-          </h2>
-          <div className="space-y-2 text-gray-700">
-            <div className="flex justify-between py-2 border-b border-yellow-200">
-              <span className="font-medium">Order ID:</span>
-              <span className="text-right">{orderId}</span>
-            </div>
-            <div className="flex justify-between py-2 border-b border-yellow-200">
-              <span className="font-medium">Transaction ID:</span>
-              <span className="text-right break-all text-sm">{transactionId}</span>
-            </div>
-            <div className="flex justify-between py-2 border-b border-yellow-200">
-              <span className="font-medium">Metode:</span>
-              <span className="text-right capitalize">{paymentType.replace('_', ' ')}</span>
-            </div>
-            <div className="flex justify-between py-2">
-              <span className="font-medium">Status:</span>
-              <span className="text-right font-bold text-yellow-600">Menunggu Pembayaran</span>
-            </div>
-          </div>
-        </div>
+        {/* Payment Status Header - Using Component */}
+        <PaymentStatusCard
+          icon={Clock}
+          variant="warning"
+          title="Pembayaran Pending"
+          subtitle="Pembayaran sedang dalam proses"
+        />
+
+        {/* Order Details - Using Component */}
+        <OrderDetails details={orderDetails} variant="warning" />
 
         {/* Instructions */}
         <div className="bg-blue-50 border-2 border-blue-200 rounded-2xl p-6 mb-8">
@@ -123,8 +102,8 @@ function PaymentPendingContent() {
 export default function PaymentPendingPage() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50">
-        <Loader className="w-16 h-16 text-purple-500 animate-spin" />
+      <div className="min-h-screen flex items-center justify-center">
+        <LoadingSpinner size="lg" />
       </div>
     }>
       <PaymentPendingContent />

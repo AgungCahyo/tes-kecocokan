@@ -1,9 +1,11 @@
-// src/app/payment/error/page.tsx
+// src/app/payment/error/page.tsx - Refactored with modular components
 'use client'
 
 import React, { Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { XCircle, Loader, AlertCircle, ArrowLeft, RefreshCw } from 'lucide-react';
+import { XCircle, AlertCircle, RefreshCw } from 'lucide-react';
+import { PaymentStatusCard, OrderDetails } from '@/components/payment';
+import { LoadingSpinner } from '@/components/ui';
 
 function PaymentErrorContent() {
   const router = useRouter();
@@ -17,28 +19,26 @@ function PaymentErrorContent() {
     router.push('/premium');
   };
 
-  const handleBackToHome = () => {
-    router.push('/');
-  };
-
   const handleBackToResult = () => {
     router.push('/result');
   };
 
+  const orderDetails = [
+    { label: 'Order ID', value: orderId },
+    ...(transactionId !== 'N/A' ? [{ label: 'Transaction ID', value: transactionId }] : [])
+  ];
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-bg-alt p-4">
       <div className="max-w-2xl w-full bg-card-bg rounded-3xl shadow-lg border border-border p-8 md:p-12">
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-20 h-20 bg-red-50 rounded-2xl mb-6">
-            <XCircle className="w-12 h-12 text-red-500" strokeWidth={2.5} />
-          </div>
-          <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-2">
-            Pembayaran Gagal
-          </h1>
-          <p className="text-lg text-text-muted">
-            Terjadi kesalahan saat memproses pembayaran
-          </p>
-        </div>
+
+        {/* Payment Status Header - Using Component */}
+        <PaymentStatusCard
+          icon={XCircle}
+          variant="error"
+          title="Pembayaran Gagal"
+          subtitle="Terjadi kesalahan saat memproses pembayaran"
+        />
 
         {/* Error Details */}
         <div className="bg-red-50 border-2 border-red-200 rounded-2xl p-6 mb-8">
@@ -55,16 +55,12 @@ function PaymentErrorContent() {
           </div>
 
           <div className="space-y-2 text-sm text-gray-700">
-            <div className="flex justify-between py-2 border-b border-red-200">
-              <span className="font-medium">Order ID:</span>
-              <span className="text-right">{orderId}</span>
-            </div>
-            {transactionId !== 'N/A' && (
-              <div className="flex justify-between py-2">
-                <span className="font-medium">Transaction ID:</span>
-                <span className="text-right break-all text-xs">{transactionId}</span>
+            {orderDetails.map((detail, idx) => (
+              <div key={idx} className={`flex justify-between py-2 ${idx < orderDetails.length - 1 ? 'border-b border-red-200' : ''}`}>
+                <span className="font-medium">{detail.label}:</span>
+                <span className="text-right break-all text-xs">{detail.value}</span>
               </div>
-            )}
+            ))}
           </div>
         </div>
 
@@ -131,8 +127,8 @@ function PaymentErrorContent() {
 export default function PaymentErrorPage() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50">
-        <Loader className="w-16 h-16 text-purple-500 animate-spin" />
+      <div className="min-h-screen flex items-center justify-center">
+        <LoadingSpinner size="lg" />
       </div>
     }>
       <PaymentErrorContent />
