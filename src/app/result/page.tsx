@@ -5,7 +5,7 @@ import React from 'react';
 import { useRouter } from 'next/navigation';
 import { Heart, MessageCircle, Smile, TrendingUp, Users, RefreshCw, Sparkles } from "lucide-react";
 import { useTestStore } from '@/lib/store';
-import { getPersonalityDescription, calculateCompatibility } from '@/app/data/questions';
+import { getPersonalityDescription, calculateCompatibility } from '@/app/data';
 
 export default function ResultPage() {
   const router = useRouter();

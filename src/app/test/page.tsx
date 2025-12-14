@@ -5,7 +5,7 @@ import React from 'react';
 import { useRouter } from 'next/navigation';
 import { ArrowLeft, ArrowRight } from "lucide-react";
 import { useTestStore } from '@/lib/store';
-import { questions, scaleOptions, calculatePersonality } from '@/app/data/questions';
+import { questions, scaleOptions, calculatePersonality } from '@/app/data';
 
 export default function TestPage() {
   const router = useRouter();
