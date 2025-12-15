@@ -68,23 +68,23 @@ export default function ResultPage() {
           <CompatibilityScore score={compatibility?.overall ?? 0} />
 
           {/* Premium CTA */}
-          <div className="bg-gradient-to-r from-gray-50 to-white border border-border rounded-2xl p-6 mb-12 flex flex-col md:flex-row items-center gap-6 shadow-sm hover:shadow-md transition-shadow">
+          <div className="bg-gradient-to-r from-primary/5 to-rose-50 border border-primary/20 rounded-2xl p-6 mb-12 flex flex-col md:flex-row items-center gap-6 shadow-sm hover:shadow-md transition-shadow">
             <div className="flex-shrink-0 w-14 h-14 bg-primary/10 rounded-2xl flex items-center justify-center">
               <Sparkles className="w-7 h-7 text-primary" strokeWidth={2} />
             </div>
             <div className="flex-1 text-center md:text-left">
               <h3 className="text-lg font-bold text-gray-900 mb-1">
-                Ingin Analisis Lebih Dalam?
+                🎁 Bonus: Analisis Mendalam dari AI
               </h3>
               <p className="text-text-muted text-sm">
-                Dapatkan rekomendasi personalisasi AI tentang strategi komunikasi dan cara mengatasi perbedaan.
+                Temukan tips komunikasi, cara mengatasi perbedaan, dan strategi memperkuat hubungan kalian!
               </p>
             </div>
             <button
               onClick={handlePremium}
               className="px-6 py-3 btn-primary text-sm whitespace-nowrap"
             >
-              Unlock Premium Report
+              Lihat Selengkapnya →
             </button>
           </div>
 
