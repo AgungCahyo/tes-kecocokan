@@ -1,55 +1,16 @@
-// src/lib/waVerificationStore.ts - FIXED VERSION
-import Redis from 'ioredis';
+// src/lib/waVerificationStore.ts - PostgreSQL Version using Prisma
+import { PrismaClient } from '@prisma/client';
 
-// Singleton Redis client
-let redis: Redis | null = null;
-
-const getRedisClient = (): Redis | null => {
-    // Return existing client if available
-    if (redis) {
-        return redis;
-    }
-
-    const redisUrl = process.env.REDIS_URL;
-
-    if (!redisUrl) {
-        console.error('⚠️ REDIS_URL not set in environment variables');
-        console.error('WA verification will NOT work without Redis!');
-        return null;
-    }
-
-    try {
-        console.log('📡 Connecting to Redis...');
-        redis = new Redis(redisUrl, {
-            maxRetriesPerRequest: 3,
-            enableReadyCheck: true,
-            lazyConnect: true,
-        });
-
-        redis.on('connect', () => {
-            console.log('✅ Redis connected successfully');
-        });
-
-        redis.on('error', (err) => {
-            console.error('❌ Redis connection error:', err);
-        });
-
-        // Try to connect
-        redis.connect().catch(err => {
-            console.error('❌ Failed to connect to Redis:', err);
-            redis = null;
-        });
-
-        return redis;
-    } catch (error) {
-        console.error('❌ Error creating Redis client:', error);
-        return null;
-    }
+// Singleton Prisma client
+const globalForPrisma = globalThis as unknown as {
+    prisma: PrismaClient | undefined;
 };
 
-// Key prefix for WA verification
-const KEY_PREFIX = 'wa_verified:';
-// No expiry - data stored permanently
+const prisma = globalForPrisma.prisma ?? new PrismaClient();
+
+if (process.env.NODE_ENV !== 'production') {
+    globalForPrisma.prisma = prisma;
+}
 
 // Normalize phone number to 62xxx format
 // Handles both 08xxx (local) and 62xxx (international) formats
@@ -71,67 +32,52 @@ const normalizePhone = (phone: string): string => {
 
 export const markVerified = async (phone: string): Promise<boolean> => {
     const normalizedPhone = normalizePhone(phone);
-    const client = getRedisClient();
-
-    if (!client) {
-        console.error('❌ [markVerified] Redis not available');
-        return false;
-    }
 
     try {
-        const key = `${KEY_PREFIX}${normalizedPhone}`;
-        // Store permanently without expiry
-        await client.set(key, 'true');
-        console.log(`✅ [markVerified] WA Verified: ${normalizedPhone} (stored permanently)`);
+        // Upsert - insert if not exists, update if exists
+        await prisma.verifiedPhone.upsert({
+            where: { phone: normalizedPhone },
+            update: {}, // No update needed, just ensure exists
+            create: { phone: normalizedPhone },
+        });
 
-        // Verify it was set correctly
-        const check = await client.get(key);
-        console.log(`🔍 [markVerified] Verification check: ${check}`);
-
+        console.log(`✅ [markVerified] WA Verified: ${normalizedPhone} (stored in PostgreSQL)`);
         return true;
     } catch (error) {
-        console.error('❌ [markVerified] Redis error:', error);
+        console.error('❌ [markVerified] PostgreSQL error:', error);
         return false;
     }
 };
 
 export const isVerified = async (phone: string): Promise<boolean> => {
     const normalizedPhone = normalizePhone(phone);
-    const client = getRedisClient();
-
-    if (!client) {
-        console.error('❌ [isVerified] Redis not available');
-        return false;
-    }
 
     try {
-        const key = `${KEY_PREFIX}${normalizedPhone}`;
-        const result = await client.get(key);
-        const verified = result === 'true';
+        const record = await prisma.verifiedPhone.findUnique({
+            where: { phone: normalizedPhone },
+        });
 
+        const verified = record !== null;
         console.log(`🔍 [isVerified] Checking ${normalizedPhone}: ${verified ? '✅ VERIFIED' : '❌ NOT VERIFIED'}`);
 
         return verified;
     } catch (error) {
-        console.error('❌ [isVerified] Redis error:', error);
+        console.error('❌ [isVerified] PostgreSQL error:', error);
         return false;
     }
 };
 
-// Helper function to test Redis connection
-export const testRedisConnection = async (): Promise<boolean> => {
-    const client = getRedisClient();
-
-    if (!client) {
-        return false;
-    }
-
+// Helper function to test database connection
+export const testDbConnection = async (): Promise<boolean> => {
     try {
-        await client.ping();
-        console.log('✅ Redis PING successful');
+        await prisma.$queryRaw`SELECT 1`;
+        console.log('✅ PostgreSQL connection successful');
         return true;
     } catch (error) {
-        console.error('❌ Redis PING failed:', error);
+        console.error('❌ PostgreSQL connection failed:', error);
         return false;
     }
 };
+
+// Export prisma client for other uses
+export { prisma };
