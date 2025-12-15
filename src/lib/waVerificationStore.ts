@@ -49,7 +49,7 @@ const getRedisClient = (): Redis | null => {
 
 // Key prefix for WA verification
 const KEY_PREFIX = 'wa_verified:';
-const EXPIRY_SECONDS = 600; // 10 minutes
+// No expiry - data stored permanently
 
 // Normalize phone number to 62xxx format
 // Handles both 08xxx (local) and 62xxx (international) formats
@@ -80,8 +80,9 @@ export const markVerified = async (phone: string): Promise<boolean> => {
 
     try {
         const key = `${KEY_PREFIX}${normalizedPhone}`;
-        await client.set(key, 'true', 'EX', EXPIRY_SECONDS);
-        console.log(`✅ [markVerified] WA Verified: ${normalizedPhone} (expires in ${EXPIRY_SECONDS}s)`);
+        // Store permanently without expiry
+        await client.set(key, 'true');
+        console.log(`✅ [markVerified] WA Verified: ${normalizedPhone} (stored permanently)`);
 
         // Verify it was set correctly
         const check = await client.get(key);

@@ -8,31 +8,34 @@ export async function GET(req: NextRequest) {
 
         if (!phone) {
             return NextResponse.json(
-                { verified: false, error: 'Phone number required' }, 
+                { verified: false, exists: false, error: 'Phone number required' },
                 { status: 400 }
             );
         }
 
         // Normalize phone number
         const cleanPhone = phone.replace(/\D/g, '');
-        
+
         if (cleanPhone.length < 10) {
             return NextResponse.json(
-                { verified: false, error: 'Invalid phone number' }, 
+                { verified: false, exists: false, error: 'Invalid phone number' },
                 { status: 400 }
             );
         }
 
         console.log(`[WA Check] Checking verification for: ${cleanPhone}`);
-        
+
         const verified = await isVerified(cleanPhone);
-        
+
         console.log(`[WA Check] Result for ${cleanPhone}: ${verified}`);
 
-        // IMPORTANT: Always return JSON with verified field
+        // Return both 'verified' and 'exists' for n8n workflow compatibility
         return NextResponse.json(
-            { verified },
-            { 
+            {
+                verified,
+                exists: verified  // exists = true if number is verified in Redis
+            },
+            {
                 status: 200,
                 headers: {
                     'Cache-Control': 'no-store, no-cache, must-revalidate',
@@ -43,7 +46,7 @@ export async function GET(req: NextRequest) {
     } catch (error) {
         console.error('[WA Check] Error:', error);
         return NextResponse.json(
-            { verified: false, error: 'Server error' }, 
+            { verified: false, error: 'Server error' },
             { status: 500 }
         );
     }
@@ -55,7 +58,7 @@ export async function POST(req: NextRequest) {
 
         if (!phone) {
             return NextResponse.json(
-                { success: false, error: 'Phone number required' }, 
+                { success: false, error: 'Phone number required' },
                 { status: 400 }
             );
         }
@@ -75,7 +78,7 @@ export async function POST(req: NextRequest) {
     } catch (error) {
         console.error('[WA Check] POST Error:', error);
         return NextResponse.json(
-            { verified: false, error: 'Server error' }, 
+            { verified: false, error: 'Server error' },
             { status: 500 }
         );
     }
