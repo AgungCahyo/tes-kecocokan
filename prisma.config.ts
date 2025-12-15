@@ -7,7 +7,6 @@ export default defineConfig({
     path: "prisma/migrations",
   },
   datasource: {
-    // Use process.env directly - works with Vercel env vars
-    url: process.env.DATABASE_URL,
+    url: process.env.DATABASE_URL!,
   },
 });
