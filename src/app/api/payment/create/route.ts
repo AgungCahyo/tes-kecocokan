@@ -86,7 +86,7 @@ export async function POST(req: NextRequest) {
 
         // Call the actual Midtrans/N8N webhook (server-side, secure)
         // If webhookUrl is set, use it. Otherwise just return mock/success (migration phase).
-        let data = { token: 'mock_token', redirect_url: '', message: '' };
+        let data = { token: 'mock_token', redirect_url: '' };
 
         if (webhookUrl) {
             const externalResponse = await fetch(webhookUrl, {
@@ -105,19 +105,7 @@ export async function POST(req: NextRequest) {
                 );
             }
             data = await externalResponse.json();
-
-            // SAVE WEBHOOK RESPONSE MESSAGE TO DB
-            if (data.message && testResultId) {
-                try {
-                    await (prisma as any).testResult.update({
-                        where: { id: testResultId },
-                        data: { message: data.message }
-                    });
-                    console.log('Saved AI message for:', testResultId);
-                } catch (err) {
-                    console.error('Failed to save AI message:', err);
-                }
-            }
+            // NOTE: AI message is now saved in payment/verify after payment success
         } else {
             // If no webhook, we can't get a real token.
             // This path assumes the webhook IS configured as per env file check earlier.
