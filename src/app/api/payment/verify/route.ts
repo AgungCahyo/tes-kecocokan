@@ -50,7 +50,7 @@ export async function POST(req: NextRequest) {
             }
 
             // CALL PERSONALITY-TEST WEBHOOK TO SEND WHATSAPP MESSAGE
-            const personalityWebhookUrl = process.env.PERSONALITY_TEST_WEBHOOK_URL;
+            const personalityWebhookUrl = process.env.NEXT_PUBLIC_N8N_WEBHOOK_URL;
             if (personalityWebhookUrl && payment?.testResult) {
                 try {
                     const testResult = payment.testResult;
