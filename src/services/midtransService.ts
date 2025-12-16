@@ -26,7 +26,8 @@ export class MidtransService {
   async createTransaction(
     phoneNumber: string,
     person1Name: string,
-    person2Name: string
+    person2Name: string,
+    compatibility?: any
   ): Promise<MidtransPaymentResponse> {
     try {
       // Call our secure API route instead of external webhook
@@ -38,7 +39,9 @@ export class MidtransService {
         body: JSON.stringify({
           phoneNumber,
           person1Name,
-          person2Name
+          person2Name,
+          compatibility,
+          matchScore: compatibility?.overall
         }),
       });
 

@@ -22,7 +22,7 @@ export async function POST(req: NextRequest) {
             );
         }
 
-        // Mark as verified in Redis
+        // Mark as verified in database
         const success = await markVerified(phone);
 
         return NextResponse.json({

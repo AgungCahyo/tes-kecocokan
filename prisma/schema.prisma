@@ -16,3 +16,32 @@ model VerifiedPhone {
   phone     String   @unique
   createdAt DateTime @default(now())
 }
+
+// Processed Order IDs to prevent duplicate processing
+model ProcessedOrder {
+  id        String   @id // Using orderId as the primary key
+  createdAt DateTime @default(now())
+}
+
+model Payment {
+  id            String      @id // orderId
+  amount        Int
+  status        String      @default("PENDING") // PENDING, SUCCESS, FAILED
+  customerName  String
+  customerPhone String
+  testResultId  String      @unique
+  testResult    TestResult  @relation(fields: [testResultId], references: [id])
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+}
+
+model TestResult {
+  id            String   @id @default(cuid())
+  person1Name   String
+  person2Name   String
+  matchScore    Float    // Overall compatibility score
+  compatibility Json     // Full JSON object of the result (raw scores)
+  message       String?  @db.Text // The formatted WhatsApp message sent to user
+  createdAt     DateTime @default(now())
+  payment       Payment?
+}

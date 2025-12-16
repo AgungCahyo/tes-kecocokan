@@ -33,7 +33,7 @@ export async function GET(req: NextRequest) {
         return NextResponse.json(
             {
                 verified,
-                exists: verified  // exists = true if number is verified in Redis
+                exists: verified  // exists = true if number is verified in database
             },
             {
                 status: 200,

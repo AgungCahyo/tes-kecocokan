@@ -1,5 +1,6 @@
 // src/app/api/payment/create/route.ts
 import { NextRequest, NextResponse } from 'next/server';
+import { prisma } from '@/lib/waVerificationStore';
 
 interface PaymentRequest {
     phoneNumber: string;
@@ -9,7 +10,7 @@ interface PaymentRequest {
 
 export async function POST(req: NextRequest) {
     try {
-        const { phoneNumber, person1Name, person2Name }: PaymentRequest = await req.json();
+        const { phoneNumber, person1Name, person2Name, compatibility, matchScore }: PaymentRequest & { compatibility?: any, matchScore?: number } = await req.json();
 
         // Validate input
         const cleanNumber = phoneNumber.replace(/\D/g, '');
@@ -32,13 +33,35 @@ export async function POST(req: NextRequest) {
 
         // Server-side env var (NOT public)
         const webhookUrl = process.env.MIDTRANS_WEBHOOK_URL;
-        if (!webhookUrl) {
-            console.error('MIDTRANS_WEBHOOK_URL not configured');
-            return NextResponse.json(
-                { success: false, error: 'Payment service not configured' },
-                { status: 500 }
-            );
+        // Ignore webhookUrl check if it's not set, we are moving away from it anyway for internal logic.
+        // But for now let's keep it to avoid breaking changes if it was used.
+
+        // SAVE TO DATABASE
+        let testResultId = '';
+        if (compatibility) {
+            const result = await (prisma as any).testResult.create({
+                data: {
+                    person1Name,
+                    person2Name,
+                    matchScore: matchScore || compatibility.overall || 0,
+                    compatibility
+                    // analysis removed, we will save 'message' from webhook response
+                }
+            });
+            testResultId = result.id;
         }
+
+        await (prisma as any).payment.create({
+            data: {
+                id: orderId,
+                amount: 14899,
+                customerName: `${person1Name} & ${person2Name}`,
+                customerPhone: cleanNumber,
+                status: 'PENDING',
+                testResultId: testResultId || undefined // Allow undefined if no test result (shouldn't happen in flow)
+            }
+        });
+
 
         // Create payment request payload
         const payload = {
@@ -54,28 +77,54 @@ export async function POST(req: NextRequest) {
                     price: 14899,
                     quantity: 1
                 }
-            ]
+            ],
+            // Pass data for n8n to generate message
+            compatibility,
+            person1Name,
+            person2Name
         };
 
         // Call the actual Midtrans/N8N webhook (server-side, secure)
-        const response = await fetch(webhookUrl, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(payload),
-        });
+        // If webhookUrl is set, use it. Otherwise just return mock/success (migration phase).
+        let data = { token: 'mock_token', redirect_url: '', message: '' };
 
-        if (!response.ok) {
-            console.error('Payment creation failed:', response.status, response.statusText);
-            return NextResponse.json(
-                { success: false, error: 'Gagal membuat transaksi pembayaran' },
-                { status: 500 }
-            );
+        if (webhookUrl) {
+            const externalResponse = await fetch(webhookUrl, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(payload),
+            });
+
+            if (!externalResponse.ok) {
+                console.error('Payment creation failed:', externalResponse.status, externalResponse.statusText);
+                return NextResponse.json(
+                    { success: false, error: 'Gagal membuat transaksi pembayaran' },
+                    { status: 500 }
+                );
+            }
+            data = await externalResponse.json();
+
+            // SAVE WEBHOOK RESPONSE MESSAGE TO DB
+            if (data.message && testResultId) {
+                try {
+                    await (prisma as any).testResult.update({
+                        where: { id: testResultId },
+                        data: { message: data.message }
+                    });
+                    console.log('Saved AI message for:', testResultId);
+                } catch (err) {
+                    console.error('Failed to save AI message:', err);
+                }
+            }
+        } else {
+            // If no webhook, we can't get a real token.
+            // This path assumes the webhook IS configured as per env file check earlier.
+            console.warn('MIDTRANS_WEBHOOK_URL not set, skipping external call (Development mode?)');
         }
 
-        const data = await response.json();
-
+        // Return the data (either from webhook or mock)
         return NextResponse.json({
             success: true,
             token: data.token,

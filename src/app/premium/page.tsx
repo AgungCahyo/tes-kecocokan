@@ -92,7 +92,8 @@ export default function PremiumPage() {
       const paymentResponse = await midtransService.createTransaction(
         cleanNumber,
         person1Name,
-        person2Name
+        person2Name,
+        compatibility
       );
 
       if (!paymentResponse.success || !paymentResponse.token) {
