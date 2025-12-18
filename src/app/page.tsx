@@ -5,7 +5,7 @@ export const metadata: Metadata = {
   title: 'Tes Kecocokan Kepribadian - Analisis Hubungan AI',
   description: 'Temukan seberapa cocok kepribadian Anda dan pasangan dengan tes MBTI lengkap. Dapatkan analisis mendalam dari AI tentang komunikasi, nilai, dan strategi membangun hubungan harmonis.',
   alternates: {
-    canonical: 'https://personalitytest.id',
+    canonical: 'https://tes-kecocokan.vercel.app',
   },
 };
 
@@ -49,7 +49,7 @@ export default function HomePage() {
         "@type": "ListItem",
         "position": 1,
         "name": "Home",
-        "item": "https://personalitytest.id"
+        "item": "https://tes-kecocokan.vercel.app"
       }
     ]
   };

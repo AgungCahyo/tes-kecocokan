@@ -1,0 +1,731 @@
+{
+  "nodes": [
+    {
+      "parameters": {
+        "batchSize": 1,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 1,
+      "position": [
+        3504,
+        -192
+      ],
+      "id": "f393524d-77f2-4340-b80c-18d56fc8c810",
+      "name": "Split In Batches"
+    },
+    {
+      "parameters": {
+        "updates": [
+          "messages"
+        ],
+        "options": {}
+      },
+      "type": "n8n-nodes-base.whatsAppTrigger",
+      "typeVersion": 1,
+      "position": [
+        1296,
+        -128
+      ],
+      "id": "4eb0d6a8-7bd0-41a7-b8a5-06c0683a72f4",
+      "name": "WhatsApp Trigger",
+      "webhookId": "21b3443b-37b3-442d-8d31-ab6efa0e8cde",
+      "credentials": {
+        "whatsAppTriggerApi": {
+          "id": "nimNBxT7JTI4RUjG",
+          "name": "WhatsApp OAuth account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3,
+      "position": [
+        2896,
+        -160
+      ],
+      "id": "44781560-c08c-435e-9871-085027ffe76f",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "options": {
+          "temperature": 0.8
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        2912,
+        144
+      ],
+      "id": "225ffb5b-8490-400e-b853-483d5d6776fb",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "sypeN1eoDf8aPpAQ",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "send",
+        "phoneNumberId": "=873342085859152",
+        "recipientPhoneNumber": "={{ $json.recipientPhone }}",
+        "textBody": "={{ $json.message }}",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.whatsApp",
+      "typeVersion": 1.1,
+      "position": [
+        3696,
+        -208
+      ],
+      "id": "f8664243-cfb0-4e58-93d4-dfbd5299166d",
+      "name": "Send Message",
+      "webhookId": "43b4cec7-c4ed-4677-b83b-8bb830466ce0",
+      "credentials": {
+        "whatsAppApi": {
+          "id": "Gx9L3UEJqgalH10R",
+          "name": "WhatsApp account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// FUNGSI UTILITY\nfunction splitTextIntoChunks(text, maxLength = 3600) {\n  const chunks = [];\n  let currentChunk = '';\n  const lines = text.split('\\n');\n  \n  for (const line of lines) {\n    const lineWithNewline = line + '\\n';\n    \n    // Jika line ini sendiri lebih panjang dari maxLength, potong paksa\n    if (lineWithNewline.length > maxLength) {\n      if (currentChunk.trim()) {\n        chunks.push(currentChunk.trim());\n        currentChunk = '';\n      }\n      \n      // Potong line panjang menjadi beberapa bagian\n      for (let i = 0; i < lineWithNewline.length; i += maxLength) {\n        chunks.push(lineWithNewline.slice(i, i + maxLength));\n      }\n      continue;\n    }\n    \n    // Cek apakah menambahkan line ini akan melebihi limit\n    if ((currentChunk + lineWithNewline).length > maxLength) {\n      if (currentChunk.trim()) {\n        chunks.push(currentChunk.trim());\n      }\n      currentChunk = lineWithNewline;\n    } else {\n      currentChunk += lineWithNewline;\n    }\n  }\n  \n  // Tambahkan chunk terakhir\n  if (currentChunk.trim()) {\n    chunks.push(currentChunk.trim());\n  }\n  \n  return chunks.length > 0 ? chunks : [''];\n}\n\n// AMBIL DATA DARI NODE SEBELUMNYA\nconst aiAgent = $input.first();\nconst codeNode = $('Code: Extract & Build Prompt').first().json;\n\nconst aiOutput = aiAgent.json.output || aiAgent.json.text || '';\nconst senderPhone = codeNode.senderPhone;\nconst senderName = codeNode.senderName;\nconst originalTopic = codeNode.originalTopic;\n\n// Validasi data penting\nif (!senderPhone) {\n  throw new Error('Sender phone number tidak ditemukan');\n}\n\nif (!aiOutput || aiOutput.trim() === '') {\n  return [{\n    json: {\n      recipientPhone: senderPhone,\n      message: `Maaf ${senderName}, terjadi error saat membuat naskah. Coba kirim ulang topiknya ya! 🙏`,\n      partNumber: 1,\n      totalParts: 1,\n      error: true\n    }\n  }];\n}\n\n// HEADER & FOOTER\nconst header = `🎬 *NASKAH VIDEO YOUTUBE*\\n📌 Topik: \"${originalTopic}\"\\n${'━'.repeat(30)}\\n\\n`;\nconst footer = `\\n\\n${'━'.repeat(30)}\\n✅ *Naskah siap digunakan!*\\n💡 Kirim topik baru untuk membuat naskah lainnya.`;\n\n// PECAH MENJADI CHUNKS\nconst chunks = splitTextIntoChunks(aiOutput, 3500);\nconst outputItems = [];\n\n// GENERATE OUTPUT\nif (chunks.length === 1) {\n  // Jika hanya 1 bagian\n  outputItems.push({\n    json: {\n      recipientPhone: senderPhone,\n      message: header + chunks[0] + footer,\n      partNumber: 1,\n      totalParts: 1,\n      senderName: senderName,\n      topic: originalTopic\n    }\n  });\n} else {\n  // Jika lebih dari 1 bagian\n  chunks.forEach((chunk, index) => {\n    let message = '';\n    const partInfo = `📄 Bagian ${index + 1}/${chunks.length}`;\n    \n    if (index === 0) {\n      // Pesan pertama: header + content + part info\n      message = header + chunk + `\\n\\n${partInfo}`;\n    } else if (index === chunks.length - 1) {\n      // Pesan terakhir: part info + content + footer\n      message = `${partInfo}\\n\\n` + chunk + footer;\n    } else {\n      // Pesan tengah: part info + content + part info\n      message = `${partInfo}\\n\\n` + chunk + `\\n\\n${partInfo}`;\n    }\n    \n    outputItems.push({\n      json: {\n        recipientPhone: senderPhone,\n        message: message,\n        partNumber: index + 1,\n        totalParts: chunks.length,\n        senderName: senderName,\n        topic: originalTopic\n      }\n    });\n  });\n}\n\nreturn outputItems;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3232,
+        -160
+      ],
+      "id": "51138379-8b4a-4a7f-b863-a25b64759f0f",
+      "name": "Code: Split Message"
+    },
+    {
+      "parameters": {
+        "jsCode": "// ============================================\n// FUNGSI EKSTRAKSI PESAN WHATSAPP\n// ============================================\nfunction extractWhatsAppMessage() {\n  let userTopic = '';\n  let senderName = 'User';\n  let senderPhone = '';\n  const inputData = $(\"WhatsApp Trigger\").first().json\n  \n  // Struktur 1: Standard WhatsApp Trigger Output\n  if (inputData.messages && Array.isArray(inputData.messages) && inputData.messages.length > 0) {\n    const msg = inputData.messages[0];\n    senderPhone = msg.from || '';\n    \n    // Ekstrak pesan berdasarkan tipe\n    if (msg.type === 'text' && msg.text?.body) {\n      userTopic = msg.text.body;\n    } else if (msg.type === 'image' && msg.image?.caption) {\n      userTopic = msg.image.caption;\n    } else if (msg.type === 'video' && msg.video?.caption) {\n      userTopic = msg.video.caption;\n    } else {\n      userTopic = 'Maaf, kirim topik dalam bentuk text ya! 📝';\n    }\n    \n    // Ekstrak nama sender\n    if (inputData.contacts && Array.isArray(inputData.contacts) && inputData.contacts.length > 0) {\n      senderName = inputData.contacts[0].profile?.name || 'User';\n    }\n  }\n  // Struktur 2: Raw Webhook dari WhatsApp API\n  else if (inputData.body?.entry) {\n    try {\n      const entry = inputData.body.entry[0];\n      const change = entry.changes[0];\n      const value = change.value;\n      \n      if (value.messages && value.messages.length > 0) {\n        const msg = value.messages[0];\n        senderPhone = msg.from || '';\n        \n        if (msg.type === 'text' && msg.text?.body) {\n          userTopic = msg.text.body;\n        } else if (msg.type === 'image' && msg.image?.caption) {\n          userTopic = msg.image.caption;\n        }\n      }\n      \n      if (value.contacts && value.contacts.length > 0) {\n        senderName = value.contacts[0].profile?.name || 'User';\n      }\n    } catch (error) {\n      console.error('Error parsing webhook:', error);\n      userTopic = 'Error: Tidak dapat membaca pesan';\n    }\n  }\n  // Struktur 3: Fallback\n  else {\n    userTopic = 'Error: Format pesan tidak dikenali';\n  }\n  \n  return { userTopic, senderName, senderPhone };\n}\n\n// ============================================\n// MAIN LOGIC\n// ============================================\nconst outputItems = [];\n\nfor (const item of $input.all()) {\n  const inputData = item.json;\n  \n  // Ekstrak data WhatsApp\n  const { userTopic, senderName, senderPhone } = extractWhatsAppMessage();\n  \n  // Validasi nomor telepon\n  if (!senderPhone) {\n    console.error('Sender phone tidak ditemukan:', inputData);\n    continue; // Skip item ini\n  }\n  \n  // Validasi topik\n  if (!userTopic || userTopic.trim() === '') {\n    outputItems.push({\n      json: {\n        chatInput: 'Error: Topik kosong',\n        originalTopic: 'N/A',\n        senderName: senderName,\n        senderPhone: senderPhone,\n        timestamp: new Date().toISOString(),\n        error: true\n      }\n    });\n    continue;\n  }\n\n  \n  // Output data untuk AI Agent\n  outputItems.push({\n    json: {\n      \n      originalTopic: userTopic.trim(),\n      senderName: senderName,\n      senderPhone: senderPhone,\n      timestamp: new Date().toISOString(),\n      error: false\n    }\n  });\n}\n\n// Pastikan ada output minimal 1 item\nif (outputItems.length === 0) {\n  throw new Error('Tidak ada data yang dapat diproses dari WhatsApp');\n}\n\nreturn outputItems;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1904,
+        -144
+      ],
+      "id": "aa35115d-7705-49b4-849b-fe152fd029c9",
+      "name": "Code: Extract & Build Prompt"
+    },
+    {
+      "parameters": {
+        "amount": 1.5
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        4192,
+        -192
+      ],
+      "id": "e42fbbb4-1279-441f-95ba-1afd44876fae",
+      "name": "Wait",
+      "webhookId": "wait-webhook-id"
+    },
+    {
+      "parameters": {
+        "operation": "send",
+        "phoneNumberId": "=873342085859152",
+        "recipientPhoneNumber": "={{ $json.senderPhone }}",
+        "textBody": "=⏳ Mohon tunggu sebentar, AI sedang membuat naskah untuk topik:\n\n\"{{ $json.originalTopic }}\"\n\nProses ini membutuhkan waktu 30-60 detik... 🎬",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.whatsApp",
+      "typeVersion": 1.1,
+      "position": [
+        2304,
+        -160
+      ],
+      "id": "44c2ec90-96e7-47cf-bc0e-a47f17e61f9d",
+      "name": "Send Processing Message",
+      "webhookId": "a511828f-5cb6-4f5b-bbfa-48673df15c78",
+      "credentials": {
+        "whatsAppApi": {
+          "id": "Gx9L3UEJqgalH10R",
+          "name": "WhatsApp account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "id": "condition-error-check",
+              "leftValue": "={{ $json.error }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "notEquals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        2080,
+        -144
+      ],
+      "id": "5247510e-cf66-4792-858c-1a5d3463f94e",
+      "name": "Check Error"
+    },
+    {
+      "parameters": {
+        "operation": "send",
+        "phoneNumberId": "=873342085859152",
+        "recipientPhoneNumber": "={{ $json.senderPhone }}",
+        "textBody": "❌ Maaf {{ $json.senderName }}, terjadi kesalahan saat memproses permintaan kamu.\n\nSilakan coba lagi dengan mengirimkan topik dalam bentuk teks. 🙏",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.whatsApp",
+      "typeVersion": 1.1,
+      "position": [
+        2400,
+        96
+      ],
+      "id": "a27f6826-8bb6-4fc6-84cb-10923a839bb7",
+      "name": "Send Error Message",
+      "webhookId": "5afdaba3-5f1c-468a-83f6-32cb760da55a",
+      "credentials": {
+        "whatsAppApi": {
+          "id": "Gx9L3UEJqgalH10R",
+          "name": "WhatsApp account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// ============================================\n// SYSTEM PROMPT - TOUGH LOVE CONTENT CREATOR\n// ============================================\nconst systemPrompt = `\nBertindaklah sebagai Content Creator Edukasi/Produktivitas dengan pendekatan \"Firm but Caring\" dan \"Psychological/Logical Approach\".\n\nGaya bicaramu tegas, jujur, dan realistis. Kamu tidak memanjakan audiens, tapi juga tidak merendahkan mereka. Kesannya: teman pintar yang ngomong apa adanya karena peduli.\n\nTugasmu adalah membuat Naskah Video YouTube (durasi 5–10 menit) berdasarkan TOPIK yang saya berikan.\n\nIKUTI PEDOMAN GAYA & STRUKTUR INI DENGAN KETAT:\n\n1. TONE & BAHASA:\n   - Gunakan kata ganti \"Lu\" dan \"Gue\".\n   - Bahasa santai, jelas, dan langsung ke poin.\n   - Hindari nada menghakimi atau menghina.\n   - Jangan gunakan pembukaan klise YouTube.\n   - Kalimat pendek dan enak didengar saat diucapkan.\n   - Kesannya: tegas, sadar realita, tapi tetap manusiawi.\n\n2. STRUKTUR NASKAH (WAJIB):\n\n   A. THE HOOK (00:00 - 00:30):\n      - Mulai dari masalah nyata yang sering dialami audiens.\n      - Buat audiens merasa dipahami, bukan diserang.\n      - Contoh vibe: \"Kalau lu sering ngerasa stuck, bukan berarti lu bodoh.\"\n\n   B. THE DIAGNOSIS (THE \"WHY\"):\n      - Jelaskan penyebab masalah secara psikologis, ilmiah, atau logis.\n      - Luruskan kesalahpahaman umum tanpa merendahkan.\n      - Gunakan analogi sederhana tapi kena.\n\n   C. THE SOLUTION (THE \"HOW\"):\n      - Berikan solusi yang konkret dan bisa langsung dipraktikkan.\n      - Gunakan nama teknik/metode yang jelas dan mudah diingat.\n      - Jelaskan langkahnya secara runtut dan realistis.\n\n   D. THE CALL TO ACTION / OUTRO:\n      - Ajak audiens mengambil satu tindakan kecil hari ini.\n      - Akhiri dengan kalimat penutup yang tenang tapi membekas.\n\n3. FORMAT OUTPUT:\n   - Sertakan timestamp estimasi [00:00].\n   - Sertakan arahan VISUAL (apa yang muncul di layar).\n   - Gunakan format markdown agar rapi dan mudah dibaca.\n\nTOPIK KONTEN: [TOPIC_PLACEHOLDER]\n`;\n\n\n// ============================================\n// FUNGSI EKSTRAKSI PESAN WHATSAPP\n// ============================================\nfunction extractWhatsAppMessage() {\n  let userTopic = '';\n  let senderName = 'User';\n  let senderPhone = '';\n  const inputData = $(\"WhatsApp Trigger\").first().json;\n  \n  // Struktur 1: Standard WhatsApp Trigger Output\n  if (inputData.messages && Array.isArray(inputData.messages) && inputData.messages.length > 0) {\n    const msg = inputData.messages[0];\n    senderPhone = msg.from || '';\n    \n    // Ekstrak pesan berdasarkan tipe\n    if (msg.type === 'text' && msg.text?.body) {\n      userTopic = msg.text.body;\n    } else if (msg.type === 'image' && msg.image?.caption) {\n      userTopic = msg.image.caption;\n    } else if (msg.type === 'video' && msg.video?.caption) {\n      userTopic = msg.video.caption;\n    } else {\n      userTopic = 'Maaf, kirim topik dalam bentuk text ya! 📝';\n    }\n    \n    // Ekstrak nama sender\n    if (inputData.contacts && Array.isArray(inputData.contacts) && inputData.contacts.length > 0) {\n      senderName = inputData.contacts[0].profile?.name || 'User';\n    }\n  }\n  // Struktur 2: Raw Webhook dari WhatsApp API\n  else if (inputData.body?.entry) {\n    try {\n      const entry = inputData.body.entry[0];\n      const change = entry.changes[0];\n      const value = change.value;\n      \n      if (value.messages && value.messages.length > 0) {\n        const msg = value.messages[0];\n        senderPhone = msg.from || '';\n        \n        if (msg.type === 'text' && msg.text?.body) {\n          userTopic = msg.text.body;\n        } else if (msg.type === 'image' && msg.image?.caption) {\n          userTopic = msg.image.caption;\n        }\n      }\n      \n      if (value.contacts && value.contacts.length > 0) {\n        senderName = value.contacts[0].profile?.name || 'User';\n      }\n    } catch (error) {\n      console.error('Error parsing webhook:', error);\n      userTopic = 'Error: Tidak dapat membaca pesan';\n    }\n  }\n  // Struktur 3: Fallback\n  else {\n    userTopic = 'Error: Format pesan tidak dikenali';\n  }\n  \n  return { userTopic, senderName, senderPhone };\n}\n\n// ============================================\n// MAIN LOGIC\n// ============================================\nconst outputItems = [];\n\nfor (const item of $input.all()) {\n  const inputData = item.json;\n  \n  // Ekstrak data WhatsApp\n  const { userTopic, senderName, senderPhone } = extractWhatsAppMessage(inputData);\n  \n  // Validasi nomor telepon\n  if (!senderPhone) {\n    console.error('Sender phone tidak ditemukan:', inputData);\n    continue; // Skip item ini\n  }\n  \n  // Validasi topik\n  if (!userTopic || userTopic.trim() === '') {\n    outputItems.push({\n      json: {\n        chatInput: 'Error: Topik kosong',\n        originalTopic: 'N/A',\n        senderName: senderName,\n        senderPhone: senderPhone,\n        timestamp: new Date().toISOString(),\n        error: true\n      }\n    });\n    continue;\n  }\n  \n  // Build final prompt dengan mengganti placeholder\n  const finalPrompt = systemPrompt.replace('[TOPIC_PLACEHOLDER]', userTopic.trim());\n  \n  // Output data untuk AI Agent\n  outputItems.push({\n    json: {\n      chatInput: finalPrompt,\n      originalTopic: userTopic.trim(),\n      senderName: senderName,\n      senderPhone: senderPhone,\n      timestamp: new Date().toISOString(),\n      error: false\n    }\n  });\n}\n\n// Pastikan ada output minimal 1 item\nif (outputItems.length === 0) {\n  throw new Error('Tidak ada data yang dapat diproses dari WhatsApp');\n}\n\nreturn outputItems;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2656,
+        -128
+      ],
+      "id": "71386ead-e193-4df3-83e2-76c8505ceb16",
+      "name": "Code: Extract & Build Prompt1"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "a82fc2d5-9ff6-4762-9e24-330259701901",
+              "leftValue": "={{ $json.messages !== undefined && $json.messages.length > 0 }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1504,
+        -128
+      ],
+      "id": "9b3e7434-3d88-48b4-8039-74f2247ba807",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://graph.facebook.com/v21.0/873342085859152/messages",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "whatsAppApi",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n    \"messaging_product\": \"whatsapp\",\n    \"status\": \"read\",\n    \"message_id\": \"{{ $('If').item.json.messages[0].id }}\",\n\"to\": \"{{ $('If').item.json.messages[0].from }}\",\n\"typing_indicator\":{\n\"type\":\"text\"\n}\n  }",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        1712,
+        -144
+      ],
+      "id": "858ea0d3-7394-428d-be4c-eb1a09023357",
+      "name": "HTTP Request1",
+      "credentials": {
+        "whatsAppApi": {
+          "id": "Gx9L3UEJqgalH10R",
+          "name": "WhatsApp account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://graph.facebook.com/v21.0/873342085859152/messages",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "whatsAppApi",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n    \"messaging_product\": \"whatsapp\",\n    \"status\": \"read\",\n    \"message_id\": \"{{ $('If').item.json.messages[0].id }}\",\n\"to\": \"{{ $('If').item.json.messages[0].from }}\",\n\"typing_indicator\":{\n\"type\":\"text\"\n}\n  }",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        2448,
+        -144
+      ],
+      "id": "d24e0f31-8bd9-4e6e-a2c8-63936bbc5cbf",
+      "name": "HTTP Request",
+      "credentials": {
+        "whatsAppApi": {
+          "id": "Gx9L3UEJqgalH10R",
+          "name": "WhatsApp account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Ambil output dari AI Agent\nconst aiOutput = $input.first().json.output || $input.first().json.text || '';\nconst codeNode = $('Code: Extract & Build Prompt').first().json;\n\nconst senderPhone = codeNode.senderPhone;\nconst senderName = codeNode.senderName;\nconst originalTopic = codeNode.originalTopic;\n\n// Validasi\nif (!aiOutput || aiOutput.trim() === '') {\n  throw new Error('Tidak ada output dari AI Agent');\n}\n\n// Ekstrak HANYA bagian HOST/narasi untuk TTS\nfunction extractHostDialogueOnly(text) {\n  const lines = text.split('\\n');\n  const hostLines = [];\n  let inHostSection = false;\n  \n  for (let i = 0; i < lines.length; i++) {\n    const line = lines[i].trim();\n    \n    // Skip empty lines\n    if (!line) {\n      inHostSection = false;\n      continue;\n    }\n    \n    // Skip visual instructions (biasanya dalam kurung atau all caps dengan kata VISUAL)\n    if (line.match(/^\\*?\\*?VISUAL/i) || \n        line.match(/^ANIMASI/i) || \n        line.match(/^TAMPILAN/i) ||\n        line.match(/^CLOSE-UP/i) ||\n        line.match(/^WIDE SHOT/i) ||\n        line.match(/^DIAGRAM/i) ||\n        line.match(/^\\[.*\\]$/) ||\n        line.startsWith('*   ')) {\n      inHostSection = false;\n      continue;\n    }\n    \n    // Skip markdown headers\n    if (line.startsWith('#') || line.startsWith('---')) {\n      inHostSection = false;\n      continue;\n    }\n    \n    // Skip section markers\n    if (line.match(/^THE HOOK/i) ||\n        line.match(/^THE DIAGNOSIS/i) ||\n        line.match(/^THE SOLUTION/i) ||\n        line.match(/^THE CALL TO ACTION/i) ||\n        line.match(/^OUTRO/i) ||\n        line.match(/^TOPIK:/i) ||\n        line.match(/^DURASI/i) ||\n        line.match(/^JUDUL/i) ||\n        line.match(/^Naskah Video/i)) {\n      inHostSection = false;\n      continue;\n    }\n    \n    // Skip step markers like \"Langkah 1:\", \"Pertama,\", etc.\n    if (line.match(/^Langkah \\d+:/i)) {\n      // Include the content after the colon\n      const afterColon = line.split(':').slice(1).join(':').trim();\n      if (afterColon) {\n        hostLines.push(afterColon);\n      }\n      inHostSection = true;\n      continue;\n    }\n    \n    // Check if this is a HOST: line - start capturing\n    if (line.startsWith('HOST:')) {\n      inHostSection = true;\n      // Get any text after \"HOST:\"\n      const afterHost = line.replace('HOST:', '').trim();\n      if (afterHost) {\n        hostLines.push(afterHost);\n      }\n      continue;\n    }\n    \n    // Check for numbered points like \"1.\" \"2.\" \"3.\"\n    if (line.match(/^\\d+\\./) && inHostSection) {\n      // Include numbered content\n      hostLines.push(line.replace(/^\\d+\\.\\s*/, ''));\n      continue;\n    }\n    \n    // If we're in HOST section, capture the line\n    if (inHostSection) {\n      // Clean up markdown formatting\n      let cleanLine = line\n        .replace(/\\*\\*([^*]+)\\*\\*/g, '$1')  // Bold\n        .replace(/\\*([^*]+)\\*/g, '$1')      // Italic\n        .replace(/_([^_]+)_/g, '$1')         // Underscore italic\n        .replace(/`([^`]+)`/g, '$1')         // Code\n        .replace(/\\[\\d{2}:\\d{2}\\]/g, '')     // Timestamps like [00:00]\n        .trim();\n      \n      if (cleanLine) {\n        hostLines.push(cleanLine);\n      }\n    }\n  }\n  \n  return hostLines.join(' ');\n}\n\nlet ttsText = extractHostDialogueOnly(aiOutput);\n\n// Fallback: jika tidak ada HOST section, bersihkan semua teks\nif (!ttsText || ttsText.length < 100) {\n  ttsText = aiOutput\n    .replace(/^#{1,6}\\s+.*/gm, '')           // Hapus headers\n    .replace(/^\\*{1,2}VISUAL.*$/gm, '')      // Hapus visual lines\n    .replace(/^VISUAL:.*/gm, '')             // Hapus VISUAL:\n    .replace(/^ANIMASI:.*/gm, '')            // Hapus ANIMASI:\n    .replace(/^TAMPILAN:.*/gm, '')           // Hapus TAMPILAN:\n    .replace(/^\\*\\s+.*/gm, '')               // Hapus bullet points\n    .replace(/^---+$/gm, '')                 // Hapus horizontal rules\n    .replace(/\\*\\*([^*]+)\\*\\*/g, '$1')       // Hapus bold\n    .replace(/\\*([^*]+)\\*/g, '$1')           // Hapus italic\n    .replace(/\\[\\d{2}:\\d{2}\\]/g, '')         // Hapus timestamps\n    .replace(/HOST:/g, '')                   // Hapus HOST:\n    .replace(/\\n{2,}/g, ' ')                 // Multiple newlines jadi spasi\n    .replace(/\\n/g, ' ')                     // Newlines jadi spasi\n    .replace(/\\s{2,}/g, ' ')                 // Multiple spaces\n    .trim();\n}\n\n// TTS limit karakter\nconst maxChars = 5000;\nconst truncatedText = ttsText.length > maxChars \n  ? ttsText.substring(0, maxChars) + '... Naskah lengkap dikirim dalam pesan teks.'\n  : ttsText;\n\nreturn [{\n  json: {\n    ttsText: truncatedText,\n    fullScript: aiOutput,\n    senderPhone: senderPhone,\n    senderName: senderName,\n    originalTopic: originalTopic\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3100,
+        -400
+      ],
+      "id": "tts-prep-code-node",
+      "name": "Code: Prepare Text for TTS"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.elevenlabs.io/v1/text-to-speech/21m00Tcm4TlvDq8ikWAM",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"text\": {{ JSON.stringify($json.ttsText) }},\n  \"model_id\": \"eleven_multilingual_v2\",\n  \"voice_settings\": {\n    \"stability\": 0.5,\n    \"similarity_boost\": 0.75,\n    \"style\": 0.5,\n    \"use_speaker_boost\": true\n  }\n}",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "file"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        3300,
+        -400
+      ],
+      "id": "elevenlabs-tts-node",
+      "name": "ElevenLabs TTS",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "YOUR_ELEVENLABS_CREDENTIAL_ID",
+          "name": "ElevenLabs API Key"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://graph.facebook.com/v21.0/873342085859152/media",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "whatsAppApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "multipart/form-data"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "multipart-form-data",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "messaging_product",
+              "value": "whatsapp"
+            },
+            {
+              "name": "type",
+              "value": "audio/mpeg"
+            },
+            {
+              "parameterType": "formBinaryData",
+              "name": "file",
+              "inputDataFieldName": "data"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        3500,
+        -400
+      ],
+      "id": "upload-audio-wa-node",
+      "name": "Upload Audio to WhatsApp",
+      "credentials": {
+        "whatsAppApi": {
+          "id": "Gx9L3UEJqgalH10R",
+          "name": "WhatsApp account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://graph.facebook.com/v21.0/873342085859152/messages",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "whatsAppApi",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"messaging_product\": \"whatsapp\",\n  \"recipient_type\": \"individual\",\n  \"to\": \"{{ $('Code: Prepare Text for TTS').item.json.senderPhone }}\",\n  \"type\": \"audio\",\n  \"audio\": {\n    \"id\": \"{{ $json.id }}\"\n  }\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        3700,
+        -400
+      ],
+      "id": "send-audio-wa-node",
+      "name": "Send Audio via WhatsApp",
+      "credentials": {
+        "whatsAppApi": {
+          "id": "Gx9L3UEJqgalH10R",
+          "name": "WhatsApp account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "send",
+        "phoneNumberId": "=873342085859152",
+        "recipientPhoneNumber": "={{ $('Code: Prepare Text for TTS').item.json.senderPhone }}",
+        "textBody": "=🎧 *Audio naskah sudah dikirim!*\n\n📌 Topik: \"{{ $('Code: Prepare Text for TTS').item.json.originalTopic }}\"\n\n_Naskah teks lengkap akan dikirim berikutnya..._",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.whatsApp",
+      "typeVersion": 1.1,
+      "position": [
+        3900,
+        -400
+      ],
+      "id": "audio-sent-notification-node",
+      "name": "Send Audio Notification",
+      "credentials": {
+        "whatsAppApi": {
+          "id": "Gx9L3UEJqgalH10R",
+          "name": "WhatsApp account"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Split In Batches": {
+      "main": [
+        [
+          {
+            "node": "Send Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "WhatsApp Trigger": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Code: Prepare Text for TTS",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code: Prepare Text for TTS": {
+      "main": [
+        [
+          {
+            "node": "ElevenLabs TTS",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "ElevenLabs TTS": {
+      "main": [
+        [
+          {
+            "node": "Upload Audio to WhatsApp",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upload Audio to WhatsApp": {
+      "main": [
+        [
+          {
+            "node": "Send Audio via WhatsApp",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Audio via WhatsApp": {
+      "main": [
+        [
+          {
+            "node": "Send Audio Notification",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Audio Notification": {
+      "main": [
+        [
+          {
+            "node": "Code: Split Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Message": {
+      "main": [
+        [
+          {
+            "node": "Wait",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code: Split Message": {
+      "main": [
+        [
+          {
+            "node": "Split In Batches",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code: Extract & Build Prompt": {
+      "main": [
+        [
+          {
+            "node": "Check Error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait": {
+      "main": [
+        [
+          {
+            "node": "Split In Batches",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Processing Message": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Error": {
+      "main": [
+        [
+          {
+            "node": "Send Processing Message",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Send Error Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code: Extract & Build Prompt1": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request1": {
+      "main": [
+        [
+          {
+            "node": "Code: Extract & Build Prompt",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Code: Extract & Build Prompt1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {
+    "WhatsApp Trigger": [
+      {
+        "messaging_product": "whatsapp",
+        "metadata": {
+          "display_phone_number": "6281392290571",
+          "phone_number_id": "873342085859152"
+        },
+        "contacts": [
+          {
+            "profile": {
+              "name": "Chyprsty"
+            },
+            "wa_id": "628156906607"
+          }
+        ],
+        "messages": [
+          {
+            "from": "628156906607",
+            "id": "wamid.HBgMNjI4MTU2OTA2NjA3FQIAEhggQUM3REUyQ0MyRTAwM0I0OEQ1NDk5NTNEQjA5RUMyRTMA",
+            "timestamp": "1765988683",
+            "text": {
+              "body": "Tutorial hell"
+            },
+            "type": "text"
+          }
+        ],
+        "field": "messages"
+      }
+    ],
+    "AI Agent": [
+      {
+        "output": "Oke, siap. Ini naskah video YouTube buat lu.\n\n---\n\n## NASKAH VIDEO YOUTUBE: KELUAR DARI NERAKA TUTORIAL\n\n**TOPIK:** Tutorial Hell\n**DURASI ESTIMASI:** 6-8 Menit\n\n---\n\n### [00:00] A. THE HOOK\n\n**VISUAL:**\n*   CU close-up muka creator dengan ekspresi serius, sedikit menyeringai.\n*   Teks besar di layar: \"LU BUKAN MALAS. LU CUMA TAKUT.\"\n*   Transisi cepat ke klip-klip orang lagi nonton tutorial (coding, desain, masak, belajar bahasa) dengan mata kosong, atau layar laptop penuh tab tutorial.\n\n**NARASI:**\nLu tahu gak kenapa lu selalu merasa sibuk belajar, nonton tutorial berjam-jam, tapi skill lu gitu-gitu aja?\nCapek kan ngumpulin sertifikat tapi hasil karya nol?\nGue kasih tahu. Lu bukan lagi belajar. Lu cuma lagi ngumpulin rasa takut.\nTakut gagal. Takut mulai dari nol. Takut menghadapi kenyataan kalau ternyata lu gak sepintar yang lu kira.\nDan lu, terjebak di neraka tutorial.\n\n### [00:30] B. THE DIAGNOSIS (THE \"WHY\")\n\n**VISUAL:**\n*   Grafik sederhana yang menunjukkan \"Input\" (tutorial) jauh lebih besar dari \"Output\" (proyek/aplikasi).\n*   Animasi otak yang menunjukkan dopamin dilepaskan saat *nonton* tutorial, bukan saat *membangun*.\n*   Analogi visual: Orang pakai baju renang di tepi kolam, tapi gak pernah nyemplung.\n*   Teks di layar: \"ILLUSION OF PROGRESS\"\n\n**NARASI:**\nIni bukan soal motivasi. Ini soal psikologi dasar otak lu.\nSaat lu nonton tutorial, otak lu dapet dopamine hit.\nDia *ngerasa* lagi belajar. *Ngerasa* lagi bikin progres.\nPadahal, yang lu dapet cuma \"Illusion of Progress\".\nMirip kayak lu nonton video orang nge-gym berjam-jam, lu ngerasa termotivasi. Tapi pas disuruh angkat beban, badan lu tetep loyo.\nOtak lu ngasih sinyal palsu, bilang \"Wah, gue udah ngerti nih!\"\nPadahal, lu cuma jadi penonton pasif. Informasi masuk, tapi gak pernah diproses jadi skill aktif.\nLu pikir lu butuh lebih banyak ilmu? Salah besar.\nLu butuh lebih banyak *praktek*.\nTutorial itu cuma peta, bro. Lu gak bakal nyampe tujuan kalau cuma ngeliatin peta doang di rumah. Lu harus jalan.\nLu takut nyasar? Takut capek? Bagus. Itu tandanya lu siap belajar *beneran*.\nKarena belajar itu bukan cuma ngumpulin data di kepala. Belajar itu ngubah perilaku, ngembangin kemampuan, dan itu cuma bisa terjadi lewat *aksi*.\n\n### [01:45] C. THE SOLUTION (THE \"HOW\")\n\n**VISUAL:**\n*   Teks besar di layar: \"THE OUTPUT OVER INPUT RULE\"\n*   Animasi flow chart sederhana untuk setiap langkah.\n*   Contoh visual: Seseorang mulai coding/desain/menulis dengan cepat, lalu mencari tutorial *spesifik* untuk masalah yang ditemui.\n*   Teks di layar untuk setiap poin: \"1. START WITH THE SMALLEST VIABLE PROJECT (SVP)\", \"2. THE FOCUSED DIVE\", \"3. THE FEEDBACK LOOP BLITZ\".\n\n**NARASI:**\nCukup sudah jadi konsumer pasif. Sekarang, saatnya jadi kreator.\nIni cara lu keluar dari neraka tutorial, gue sebut **\"The Output Over Input Rule\"**.\n\n**Pertama, [02:00] \"START WITH THE SMALLEST VIABLE PROJECT (SVP)\".**\nBerhenti nyari tutorial \"full course\" yang berjam-jam. Itu jebakan.\nPikirkan satu proyek kecil. Paling kecil yang bisa lu bayangin.\nContoh: Kalau lu belajar ngoding, jangan bikin aplikasi sosial media. Bikin kalkulator sederhana. Atau To-Do list app yang cuma bisa nambah dan hapus.\nKalau desain, jangan bikin branding guideline satu perusahaan. Bikin logo sederhana buat kopi fiktif.\nTujuannya? Selesai. Merasakan sensasi *menyelesaikan* sesuatu. Itu jauh lebih berharga daripada ngumpulin 100 tutorial.\n\n**Kedua, [03:00] \"THE FOCUSED DIVE\".**\nOke, lu udah punya SVP. Sekarang, lu cuma boleh nonton atau baca tutorial yang *spesifik* buat masalah yang lu hadapi *saat ini* di proyek lu.\nBukan nonton \"How to be a JavaScript Master\" dari awal sampai akhir.\nTapi, \"How to center a div in CSS\" atau \"Cara connect API ini\" atau \"Teknik shading di Photoshop\".\nTutorial yang cuma 5-10 menit, yang langsung ngasih solusi.\nSetelah dapet solusinya? LANGSUNG TERAPIN. Jangan berlama-lama.\nIni namanya \"just-in-time learning\". Lu belajar apa yang lu butuhin, pas lu butuhin.\n\n**Ketiga, [04:15] \"THE FEEDBACK LOOP BLITZ\".**\nJangan simpen hasil kerja lu sendiri. Pamerin. Kasih tahu orang. Minta kritik.\nIni bagian paling penting. Kenapa? Karena saat lu nunjukkin kerjaan lu, lu maksa diri lu buat menyelesaikannya.\nDan saat lu dapet kritik, itu bukan serangan pribadi. Itu *data*.\nData yang paling berharga buat belajar.\nGabung komunitas online, forum, atau cari mentor. Posting kerjaan lu, tanya \"Gimana menurut lu ini?\"\nSiap-siap dikritik. Siap-siap dibilang jelek. Tapi itu yang bikin lu tumbuh.\nIngat, lu belajar paling cepet saat lu *gagal* dan *dikasih tahu* kenapa lu gagal.\n\n### [05:30] D. THE CALL TO ACTION / OUTRO\n\n**VISUAL:**\n*   Creator menatap tajam ke kamera.\n*   Teks di layar: \"ACTION OVER INACTION.\"\n*   Background klip-klip tutorial yang sebelumnya terlihat monoton, kini menjadi cepat dan blur, seolah-olah ditinggalkan.\n*   Di akhir, creator tersenyum tipis, lalu menunjuk ke arah layar (seolah menunjuk audiens). Mic drop.\n\n**NARASI:**\nLu udah dengerin gue ngomong panjang lebar. Sekarang terserah lu.\nMau tetep jadi kolektor tutorial? Numpuk pengetahuan yang gak pernah lu pakai?\nAtau lu mau jadi pembangun? Jadi kreator?\nPilih satu proyek kecil. Buka aplikasi lu sekarang.\nLalu mulai.\nEnggak perlu sempurna. Yang penting, lu mulai.\nDan gue jamin, sensasi menyelesaikan satu proyek kecil, sesederhana apapun itu, akan jauh lebih memuaskan daripada ribuan jam nonton tutorial.\nStop jadi konsumer pasif. Jadi kreator aktif.\nTutup YouTube ini. Buka editor code/kanvas/dokumen lu.\nSEKARANG.\n\n---"
+      }
+    ]
+  },
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "0283d2b1663f6d76f7881b53c0c6b6387ed5bb56e752ae4179ae92c971cf8126"
+  }
+}
