@@ -43,7 +43,7 @@ function PaymentErrorContent() {
         {/* Error Details */}
         <div className="bg-red-50 border-2 border-red-200 rounded-2xl p-6 mb-8">
           <div className="flex items-start gap-4 mb-4">
-            <AlertCircle className="w-6 h-6 text-red-500 flex-shrink-0 mt-1" strokeWidth={2.5} />
+            <AlertCircle className="w-6 h-6 text-red-500 shrink-0 mt-1" strokeWidth={2.5} />
             <div>
               <h3 className="text-lg font-bold text-gray-900 mb-2">
                 Detail Error

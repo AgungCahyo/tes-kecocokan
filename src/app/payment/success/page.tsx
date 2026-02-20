@@ -234,7 +234,7 @@ function PaymentSuccessContent() {
   // Verifying state
   if (status === 'verifying') {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 p-4">
+      <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-indigo-50 via-purple-50 to-pink-50 p-4">
         <div className="max-w-md w-full bg-card-bg rounded-3xl shadow-2xl p-8">
           <div className="text-center">
             <Loader className="w-16 h-16 mx-auto mb-6 text-purple-500 animate-spin" />
@@ -253,7 +253,7 @@ function PaymentSuccessContent() {
   // Error state
   if (status === 'error') {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 p-4">
+      <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-indigo-50 via-purple-50 to-pink-50 p-4">
         <div className="max-w-md w-full bg-card-bg rounded-3xl shadow-2xl p-8">
           <div className="text-center">
             <AlertCircle className="w-16 h-16 mx-auto mb-6 text-red-500" />
@@ -267,7 +267,7 @@ function PaymentSuccessContent() {
             <div className="space-y-3">
               <button
                 onClick={() => router.push('/premium')}
-                className="w-full py-3 bg-gradient-to-r from-purple-500 to-pink-500 text-white font-semibold rounded-xl hover:from-purple-600 hover:to-pink-600 transition-all"
+                className="w-full py-3 bg-linear-to-r from-purple-500 to-pink-500 text-white font-semibold rounded-xl hover:from-purple-600 hover:to-pink-600 transition-all"
               >
                 Coba Lagi
               </button>
@@ -330,7 +330,7 @@ function PaymentSuccessContent() {
         {/* What's Next */}
         <div className="bg-blue-50 border-2 border-blue-200 rounded-2xl p-6 mb-8">
           <div className="flex items-start gap-4">
-            <Mail className="w-8 h-8 text-blue-500 flex-shrink-0 mt-1" strokeWidth={2.5} />
+            <Mail className="w-8 h-8 text-blue-500 shrink-0 mt-1" strokeWidth={2.5} />
             <div>
               <h3 className="text-lg font-bold text-gray-900 mb-2">
                 Langkah Selanjutnya
@@ -360,7 +360,7 @@ function PaymentSuccessContent() {
         {/* Tips */}
         <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4 mb-8">
           <div className="flex items-start gap-3">
-            <FileText className="w-5 h-5 text-yellow-600 flex-shrink-0 mt-0.5" strokeWidth={2.5} />
+            <FileText className="w-5 h-5 text-yellow-600 shrink-0 mt-0.5" strokeWidth={2.5} />
             <div className="text-sm text-gray-700">
               <p className="font-semibold mb-1">💡 Tips:</p>
               <p>Jika pesan tidak masuk dalam 15 menit, hubungi support dengan Order ID di atas.</p>
@@ -400,7 +400,7 @@ function PaymentSuccessContent() {
 export default function PaymentSuccessPage() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50">
+      <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-indigo-50 via-purple-50 to-pink-50">
         <Loader className="w-16 h-16 text-purple-500 animate-spin" />
       </div>
     }>

@@ -29,7 +29,7 @@ export function FeatureList({
             <ul className="space-y-3">
                 {features.map((item, idx) => (
                     <li key={idx} className="flex items-start gap-3">
-                        <CheckCircle className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" strokeWidth={2.5} />
+                        <CheckCircle className="w-5 h-5 text-primary shrink-0 mt-0.5" strokeWidth={2.5} />
                         <span className="text-gray-700">{item}</span>
                     </li>
                 ))}

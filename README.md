@@ -1,36 +1,91 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Tes Kecocokan Kepribadian (AI Relationship Analysis)
 
-## Getting Started
+Aplikasi web untuk menganalisis kecocokan hubungan (*Relationship Compatibility*) berbasis MBTI dan AI. Aplikasi ini memberikan insight mendalam tentang dinamika hubungan, gaya komunikasi, dan tips harmonis antara dua individu.
 
-First, run the development server:
+## Fitur Utama
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+-   **Tes Kepribadian MBTI**: Kuis interaktif untuk menentukan tipe kepribadian.
+-   **Analisis AI**: Menggunakan AI (via n8n) untuk menghasilkan laporan kecocokan yang personal dan mendalam.
+-   **Integrasi Pembayaran**: Sistem pembayaran aman menggunakan Midtrans untuk mengakses hasil premium.
+-   **WhatsApp Delivery**: Hasil analisis dikirimkan langsung ke WhatsApp pengguna.
+-   **Responsive Design**: Tampilan optimal untuk mobile dan desktop.
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Teknologi
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+-   **Frontend**: [Next.js 16](https://nextjs.org/) (App Router), React 19, TailwindCSS 4.
+-   **Backend**: Next.js API Routes.
+-   **Database**: [Prisma](https://www.prisma.io/) (ORM) dengan PostgreSQL.
+-   **Payment Gateway**: [Midtrans](https://midtrans.com/).
+-   **AI & Workflow**: [n8n](https://n8n.io/) (untuk flow AI dan pengiriman WhatsApp).
+-   **State Management**: Zustand.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Prasyarat
 
-## Learn More
+Sebelum memulai, pastikan Anda telah memiliki:
 
-To learn more about Next.js, take a look at the following resources:
+-   Node.js (v20 atau lebih baru disarankan)
+-   PostgreSQL Database
+-   Akun Midtrans (Client Key & Server Key)
+-   Instance n8n aktif dengan workflow yang sesuai
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Instalasi
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+1.  **Clone repository:**
+    ```bash
+    git clone https://github.com/Start-Up-Glitch/tes-kecocokan.git
+    cd tes-kecocokan
+    ```
 
-## Deploy on Vercel
+2.  **Install dependencies:**
+    ```bash
+    npm install
+    # atau
+    yarn install
+    ```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+3.  **Setup Environment Variables:**
+    Buat file `.env` di root direktori dan sesuaikan dengan konfigurasi berikut:
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+    ```env
+    # Database
+    DATABASE_URL="postgresql://user:password@localhost:5432/tes_kecocokan?schema=public"
+
+    # Midtrans (Client side config)
+    NEXT_PUBLIC_MIDTRANS_CLIENT_KEY="your-midtrans-client-key"
+    NEXT_PUBLIC_MIDTRANS_SNAP_URL="https://app.sandbox.midtrans.com/snap/snap.js" # Ganti URL jika production
+    NEXT_PUBLIC_MIDTRANS_ENABLED="true"
+
+    # Webhook & API Config
+    # Tambahkan env var lain yang diperlukan oleh n8n atau logic internal
+    ```
+
+4.  **Database Migration:**
+    Generate Prisma client dan push schema ke database:
+    ```bash
+    npx prisma generate
+    npx prisma db push
+    ```
+
+5.  **Jalankan Development Server:**
+    ```bash
+    npm run dev
+    ```
+    Buka [http://localhost:3000](http://localhost:3000) di browser Anda.
+
+## Alur Kerja (Workflow)
+
+1.  **User Input**: Pengguna mengisi kuis dan data diri.
+2.  **Pembayaran**: Pengguna menyelesaikan pembayaran via Midtrans.
+3.  **Proses**:
+    -   Backend memanggil webhook n8n setelah konfirmasi pembayaran.
+    -   n8n memproses data menggunakan AI prompts.
+    -   Hasil dikirim balik ke database dan ke WhatsApp pengguna.
+4.  **Pelajari n8n**: Lihat panduan konfigurasi n8n di [n8n_guide.md](./n8n_guide.md).
+
+## Struktur Project
+
+-   `/src/app`: Halaman-halaman Next.js (App Router).
+-   `/src/components`: Komponen React reusable.
+-   `/src/services`: Logic untuk eksternal service (Midtrans, dll).
+-   `/prisma`: Schema database.
+-   `/public`: Aset statis.

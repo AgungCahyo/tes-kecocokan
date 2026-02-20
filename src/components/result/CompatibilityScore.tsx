@@ -9,7 +9,7 @@ interface CompatibilityScoreProps {
 
 export function CompatibilityScore({ score }: CompatibilityScoreProps) {
     return (
-        <div className="bg-gradient-to-br from-primary to-rose-700 text-white rounded-3xl p-10 mb-12 shadow-xl relative overflow-hidden group">
+        <div className="bg-linear-to-br from-primary to-rose-700 text-white rounded-3xl p-10 mb-12 shadow-xl relative overflow-hidden group">
             <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl -mr-16 -mt-16 group-hover:scale-110 transition-transform duration-700" />
             <div className="absolute bottom-0 left-0 w-64 h-64 bg-black/10 rounded-full blur-3xl -ml-16 -mb-16 group-hover:scale-110 transition-transform duration-700" />
 

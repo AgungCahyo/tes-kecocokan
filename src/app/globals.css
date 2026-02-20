@@ -23,9 +23,9 @@
   --text-muted: #64748B;
   /* Slate 500 */
 
-  /* Gradients */
-  --gradient-start: #FFF1F2;
-  --gradient-end: #F8FAFC;
+  /* linears */
+  --linear-start: #FFF1F2;
+  --linear-end: #F8FAFC;
 }
 
 @theme inline {
@@ -57,7 +57,7 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-sans), Arial, sans-serif;
-  background-image: linear-gradient(to bottom right, var(--gradient-start), var(--gradient-end));
+  background-image: linear-linear(to bottom right, var(--linear-start), var(--linear-end));
   min-height: 100vh;
 }
 

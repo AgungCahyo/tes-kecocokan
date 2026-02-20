@@ -68,8 +68,8 @@ export default function ResultPage() {
           <CompatibilityScore score={compatibility?.overall ?? 0} />
 
           {/* Premium CTA */}
-          <div className="bg-gradient-to-r from-primary/5 to-rose-50 border border-primary/20 rounded-2xl p-6 mb-12 flex flex-col md:flex-row items-center gap-6 shadow-sm hover:shadow-md transition-shadow">
-            <div className="flex-shrink-0 w-14 h-14 bg-primary/10 rounded-2xl flex items-center justify-center">
+          <div className="bg-linear-to-r from-primary/5 to-rose-50 border border-primary/20 rounded-2xl p-6 mb-12 flex flex-col md:flex-row items-center gap-6 shadow-sm hover:shadow-md transition-shadow">
+            <div className="shrink-0 w-14 h-14 bg-primary/10 rounded-2xl flex items-center justify-center">
               <Sparkles className="w-7 h-7 text-primary" strokeWidth={2} />
             </div>
             <div className="flex-1 text-center md:text-left">

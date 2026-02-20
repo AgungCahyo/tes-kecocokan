@@ -48,7 +48,7 @@ function PaymentPendingContent() {
         {/* Instructions */}
         <div className="bg-blue-50 border-2 border-blue-200 rounded-2xl p-6 mb-8">
           <div className="flex items-start gap-4">
-            <AlertTriangle className="w-8 h-8 text-blue-500 flex-shrink-0 mt-1" strokeWidth={2.5} />
+            <AlertTriangle className="w-8 h-8 text-blue-500 shrink-0 mt-1" strokeWidth={2.5} />
             <div>
               <h3 className="text-lg font-bold text-gray-900 mb-2">
                 Instruksi Pembayaran
